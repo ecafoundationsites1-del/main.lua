@@ -1,14 +1,17 @@
 -- 서비스 로드
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
 local lp = Players.LocalPlayer
 
 -- 설정
+local KEY_URL = "여기에_키_링크_넣으세요" 
 local CORRECT_KEY = "DORS123" 
 
--- UI 생성 (ScreenGui)
+-- UI 생성
 local ScreenGui = Instance.new("ScreenGui", gethui() or game:GetService("CoreGui"))
-ScreenGui.Name = "AntiLua_Ultimate_Mobile"
+ScreenGui.Name = "AntiLua_Mobile_Pro"
 
 -- [1] 키 시스템 UI
 local KeyFrame = Instance.new("Frame", ScreenGui)
@@ -16,135 +19,170 @@ KeyFrame.Size = UDim2.new(0, 300, 0, 200)
 KeyFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
 KeyFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 KeyFrame.BorderSizePixel = 0
-Instance.new("UICorner", KeyFrame).CornerRadius = UDim.new(0, 15)
+
+local KeyCorner = Instance.new("UICorner", KeyFrame)
+local KeyTitle = Instance.new("TextLabel", KeyFrame)
+KeyTitle.Size = UDim2.new(1, 0, 0, 40)
+KeyTitle.Text = "AntiLua Key System"
+KeyTitle.TextColor3 = Color3.new(1, 1, 1)
+KeyTitle.BackgroundTransparency = 1
+KeyTitle.Font = Enum.Font.Ubuntu
 
 local KeyInput = Instance.new("TextBox", KeyFrame)
 KeyInput.Size = UDim2.new(0, 240, 0, 40)
 KeyInput.Position = UDim2.new(0.5, -120, 0.4, 0)
-KeyInput.PlaceholderText = "Enter Key: DORS123"
+KeyInput.PlaceholderText = "Enter Key Here..."
+KeyInput.Text = ""
 KeyInput.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 KeyInput.TextColor3 = Color3.new(1, 1, 1)
 
-local CheckBtn = Instance.new("TextButton", KeyFrame)
-CheckBtn.Size = UDim2.new(0, 240, 0, 40)
-CheckBtn.Position = UDim2.new(0.5, -120, 0.7, 0)
-CheckBtn.Text = "Login"
-CheckBtn.BackgroundColor3 = Color3.fromRGB(60, 255, 100)
+local GetKeyBtn = Instance.new("TextButton", KeyFrame)
+GetKeyBtn.Size = UDim2.new(0, 115, 0, 40)
+GetKeyBtn.Position = UDim2.new(0.5, -120, 0.7, 0)
+GetKeyBtn.Text = "Get Key"
+GetKeyBtn.BackgroundColor3 = Color3.fromRGB(171, 60, 255)
+GetKeyBtn.TextColor3 = Color3.new(1, 1, 1)
 
--- [2] 메인 UI (합쳐진 버전)
+local CheckBtn = Instance.new("TextButton", KeyFrame)
+CheckBtn.Size = UDim2.new(0, 115, 0, 40)
+CheckBtn.Position = UDim2.new(0.5, 5, 0.7, 0)
+CheckBtn.Text = "Check Key"
+CheckBtn.BackgroundColor3 = Color3.fromRGB(60, 255, 100)
+CheckBtn.TextColor3 = Color3.new(0, 0, 0)
+
+-- [2] 메인 UI
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 320, 0, 320)
-MainFrame.Position = UDim2.new(0.5, -160, 0.5, -160)
+MainFrame.Size = UDim2.new(0, 320, 0, 250)
+MainFrame.Position = UDim2.new(0.5, -160, 0.5, -125)
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.Visible = false
-Instance.new("UICorner", MainFrame)
 
-local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Text = "AntiLua Premium Hub"
-Title.TextColor3 = Color3.new(1, 1, 1)
-Title.BackgroundTransparency = 1
+local MainCorner = Instance.new("UICorner", MainFrame)
+local CloseBtn = Instance.new("TextButton", MainFrame)
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -35, 0, 5)
+CloseBtn.Text = "X"
+CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+CloseBtn.TextColor3 = Color3.new(1, 1, 1)
 
--- 버튼 생성 함수 (중복 코드 방지)
-local function createBtn(name, pos, color)
-    local btn = Instance.new("TextButton", MainFrame)
-    btn.Name = name
-    btn.Size = UDim2.new(0, 260, 0, 50)
-    btn.Position = pos
-    btn.BackgroundColor3 = color
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 16
-    Instance.new("UICorner", btn)
-    return btn
-end
+local ProfileImg = Instance.new("ImageLabel", MainFrame)
+ProfileImg.Size = UDim2.new(0, 70, 0, 70)
+ProfileImg.Position = UDim2.new(0.5, -35, 0.1, 0)
+ProfileImg.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+ProfileImg.Image = Players:GetUserThumbnailAsync(lp.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
+local ImgCorner = Instance.new("UICorner", ProfileImg)
+ImgCorner.CornerRadius = UDim.new(1, 0)
 
-local GodBtn = createBtn("GodBtn", UDim2.new(0.5, -130, 0.25, 0), Color3.fromRGB(255, 100, 0))
-GodBtn.Text = "God Mode: OFF"
-
-local EspBtn = createBtn("EspBtn", UDim2.new(0.5, -130, 0.45, 0), Color3.fromRGB(171, 60, 255))
-EspBtn.Text = "Murder ESP: OFF"
-
-local CloseBtn = createBtn("CloseBtn", UDim2.new(0.5, -130, 0.75, 0), Color3.fromRGB(200, 50, 50))
-CloseBtn.Text = "Close Script"
-CloseBtn.Size = UDim2.new(0, 260, 0, 40)
+local EspBtn = Instance.new("TextButton", MainFrame)
+EspBtn.Size = UDim2.new(0, 240, 0, 50)
+EspBtn.Position = UDim2.new(0.5, -120, 0.6, 0)
+EspBtn.Text = "Activate MM2 ESP"
+EspBtn.BackgroundColor3 = Color3.fromRGB(171, 60, 255)
+EspBtn.TextColor3 = Color3.new(1, 1, 1)
 
 --- 기능 구현 ---
 
--- 키 체크
+-- 1. 키 시스템 로직
+GetKeyBtn.MouseButton1Click:Connect(function()
+    setclipboard(KEY_URL)
+    GetKeyBtn.Text = "Link Copied!"
+    task.wait(2)
+    GetKeyBtn.Text = "Get Key"
+end)
+
 CheckBtn.MouseButton1Click:Connect(function()
     if KeyInput.Text == CORRECT_KEY then
         KeyFrame:Destroy()
         MainFrame.Visible = true
+    else
+        KeyInput.Text = ""
+        KeyInput.PlaceholderText = "Wrong Key!"
+        task.wait(1)
+        KeyInput.PlaceholderText = "Enter Key Here..."
     end
 end)
 
--- [기능 1] 갓모드 (God Mode)
-local godEnabled = false
-GodBtn.MouseButton1Click:Connect(function()
-    godEnabled = not godEnabled
-    GodBtn.Text = godEnabled and "God Mode: ON" or "God Mode: OFF"
-    GodBtn.BackgroundColor3 = godEnabled and Color3.fromRGB(60, 255, 100) or Color3.fromRGB(255, 100, 0)
-    
-    task.spawn(function()
-        while godEnabled do
-            pcall(function()
-                local char = lp.Character
-                if char then
-                    local hum = char:FindFirstChildOfClass("Humanoid")
-                    if hum then
-                        hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
-                        if hum.Health > 0 and hum.Health < 100 then
-                            hum.Health = 100
-                        end
-                    end
-                end
-            end)
-            task.wait(0.1)
-        end
-    end)
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
 end)
 
--- [기능 2] 강화된 ESP
+-- 2. 통합 ESP 로직 (인벤토리 실시간 감시)
 local espEnabled = false
+
+local function applyESP()
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            local char = v.Character
+            local backpack = v:FindFirstChild("Backpack")
+            local color = Color3.fromRGB(0, 255, 0) -- 기본: 시민 (초록)
+
+            -- 탐지 키워드 설정
+            local knifeNames = {"Knife", "Slasher", "Saw", "Blade", "칼"}
+            local gunNames = {"Gun", "Revolver", "Luger", "Sheriff", "총"}
+
+            local isMurder = false
+            local isSheriff = false
+
+            -- 캐릭터와 가방을 동시에 검사
+            for _, name in pairs(knifeNames) do
+                if char:FindFirstChild(name) or (backpack and backpack:FindFirstChild(name)) then
+                    isMurder = true
+                    break
+                end
+            end
+
+            for _, name in pairs(gunNames) do
+                if char:FindFirstChild(name) or (backpack and backpack:FindFirstChild(name)) then
+                    isSheriff = true
+                    break
+                end
+            end
+
+            -- 색상 결정
+            if isMurder then
+                color = Color3.fromRGB(255, 0, 0) -- 살인자 (빨강)
+            elseif isSheriff then
+                color = Color3.fromRGB(0, 150, 255) -- 보안관 (파랑)
+            end
+
+            -- Highlight 생성 및 업데이트
+            local highlight = char:FindFirstChild("MM2_ESP")
+            if not highlight then
+                highlight = Instance.new("Highlight")
+                highlight.Name = "MM2_ESP"
+                highlight.Parent = char
+            end
+            
+            highlight.FillColor = color
+            highlight.OutlineColor = Color3.new(1, 1, 1)
+            highlight.FillTransparency = 0.4
+            highlight.OutlineTransparency = 0
+            highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            highlight.Enabled = true
+        end
+    end
+end
+
+-- ESP 버튼 이벤트
 EspBtn.MouseButton1Click:Connect(function()
     espEnabled = not espEnabled
     EspBtn.Text = espEnabled and "ESP: ON" or "ESP: OFF"
     EspBtn.BackgroundColor3 = espEnabled and Color3.fromRGB(60, 255, 100) or Color3.fromRGB(171, 60, 255)
     
-    task.spawn(function()
-        while espEnabled do
-            for _, v in pairs(Players:GetPlayers()) do
-                if v ~= lp and v.Character then
-                    local char = v.Character
-                    local color = Color3.fromRGB(0, 255, 0) -- 시민
-
-                    -- 역할 판별 (도구 이름 기반)
-                    local isMurder = char:FindFirstChild("Knife") or v.Backpack:FindFirstChild("Knife") or char:FindFirstChild("칼")
-                    local isSheriff = char:FindFirstChild("Gun") or v.Backpack:FindFirstChild("Gun") or char:FindFirstChild("Revolver") or char:FindFirstChild("총")
-
-                    if isMurder then color = Color3.fromRGB(255, 0, 0)
-                    elseif isSheriff then color = Color3.fromRGB(0, 150, 255) end
-
-                    local hl = char:FindFirstChild("MM2_HL") or Instance.new("Highlight", char)
-                    hl.Name = "MM2_HL"
-                    hl.FillColor = color
-                    hl.OutlineColor = Color3.new(1, 1, 1)
-                    hl.FillTransparency = 0.4
-                    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                    hl.Enabled = true
-                end
+    if espEnabled then
+        task.spawn(function()
+            while espEnabled do
+                applyESP()
+                task.wait(0.3) -- 0.3초마다 갱신하여 인벤토리 변화 즉시 감지
             end
-            task.wait(0.5)
-        end
-        -- ESP 종료 시 제거
+        end)
+    else
+        -- ESP 즉시 제거
         for _, v in pairs(Players:GetPlayers()) do
-            if v.Character and v.Character:FindFirstChild("MM2_HL") then
-                v.Character.MM2_HL:Destroy()
+            if v.Character and v.Character:FindFirstChild("MM2_ESP") then
+                v.Character.MM2_ESP:Destroy()
             end
         end
-    end)
+    end
 end)
-
-CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 
