@@ -7,14 +7,13 @@ local lp = Players.LocalPlayer
 
 -- [설정 및 데이터]
 local CORRECT_KEY = "DORS123"
-local gunNames = {"Gun", "Revolver", "Luger", "Sheriff", "총", "권총", "데저트이글", "DroppedGun", "GunDrop"}
+local gunNames = {"Gun", "Revolver", "Luger", "Sheriff", "총", "권총", "데저트이글", "DroppedGun", "GunDrop", "Handle"}
 
--- [UI 생성]
+-- [UI 및 드래그 설정]
 local ScreenGui = Instance.new("ScreenGui", gethui() or game:GetService("CoreGui"))
-ScreenGui.Name = "AntiLua_KR_Murder"
+ScreenGui.Name = "AntiLua_Final"
 ScreenGui.ResetOnSpawn = false
 
--- [드래그 함수]
 local function makeDraggable(frame)
     local dragging, dragInput, dragStart, startPos
     frame.InputBegan:Connect(function(input)
@@ -69,7 +68,6 @@ EspBtn.Size = UDim2.new(0, 240, 0, 50)
 EspBtn.Position = UDim2.new(0.5, -120, 0.2, 0)
 EspBtn.Text = "ESP: OFF"
 EspBtn.BackgroundColor3 = Color3.fromRGB(171, 60, 255)
-EspBtn.TextColor3 = Color3.new(1, 1, 1)
 Instance.new("UICorner", EspBtn)
 
 local GunTpToggleBtn = Instance.new("TextButton", MainFrame)
@@ -77,71 +75,52 @@ GunTpToggleBtn.Size = UDim2.new(0, 240, 0, 50)
 GunTpToggleBtn.Position = UDim2.new(0.5, -120, 0.5, 0)
 GunTpToggleBtn.Text = "Gun TP Button: OFF"
 GunTpToggleBtn.BackgroundColor3 = Color3.fromRGB(255, 80, 0)
-GunTpToggleBtn.TextColor3 = Color3.new(1, 1, 1)
 Instance.new("UICorner", GunTpToggleBtn)
 
--- [3] 작은 텔레포트 실행 버튼
+-- [3] GET GUN 실행 버튼
 local QuickTpBtn = Instance.new("TextButton", ScreenGui)
-QuickTpBtn.Size = UDim2.new(0, 60, 0, 60)
-QuickTpBtn.Position = UDim2.new(0.8, 0, 0.5, 0)
+QuickTpBtn.Size = UDim2.new(0, 65, 0, 65)
+QuickTpBtn.Position = UDim2.new(0.85, 0, 0.5, 0)
 QuickTpBtn.Text = "GET\nGUN"
 QuickTpBtn.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
 QuickTpBtn.Visible = false
 Instance.new("UICorner", QuickTpBtn).CornerRadius = UDim.new(1, 0)
 makeDraggable(QuickTpBtn)
 
---- [기능 로직] ---
+--- [핵심 로직] ---
 
 local espEnabled = false
 local isTeleporting = false
 
--- 총 찾기 함수 (ESP와 동일한 이름 리스트 사용)
-local function getDroppedGun()
+-- 정밀 총 찾기 함수
+local function getValidDroppedGun()
     for _, obj in pairs(workspace:GetDescendants()) do
+        local isMatch = false
         for _, name in pairs(gunNames) do
-            if obj.Name == name or obj.Parent.Name == name then
-                local target = obj:IsA("BasePart") and obj or obj:FindFirstChild("Handle")
-                if target then
-                    -- 플레이어가 소유하지 않은 파트만 반환
-                    local model = target:FindFirstAncestorOfClass("Model")
-                    if not model or not Players:GetPlayerFromCharacter(model) then
-                        return target
-                    end
-                end
+            if obj.Name == name or (obj.Parent and obj.Parent.Name == name) then
+                isMatch = true; break
+            end
+        end
+
+        if isMatch and obj:IsA("BasePart") then
+            -- 1. 플레이어가 들고 있는지 확인
+            local model = obj:FindFirstAncestorOfClass("Model")
+            local isPlayer = model and Players:GetPlayerFromCharacter(model)
+            
+            -- 2. 좌표 유효성 검사 (로비 텔포 방지용)
+            -- 좌표가 0,0,0이 아니고, 너무 높거나 낮지 않은지 확인
+            local pos = obj.Position
+            local isRealMapPos = pos.Magnitude > 15 and pos.Y > -40 and pos.Y < 400
+            
+            if not isPlayer and isRealMapPos then
+                return obj
             end
         end
     end
     return nil
 end
 
--- ESP 적용 함수
-local function applyESP()
-    for _, v in pairs(Players:GetPlayers()) do
-        if v ~= lp and v.Character then
-            local char = v.Character
-            local isMurder = false
-            local isSheriff = false
-            
-            -- 도구 및 백팩 뒤지기
-            for _, item in pairs(v.Backpack:GetChildren()) do
-                if item.Name:find("Knife") or item.Name:find("칼") then isMurder = true end
-                for _, gName in pairs(gunNames) do if item.Name == gName then isSheriff = true end end
-            end
-            for _, item in pairs(char:GetChildren()) do
-                if item.Name:find("Knife") or item.Name:find("칼") then isMurder = true end
-                for _, gName in pairs(gunNames) do if item.Name == gName then isSheriff = true end end
-            end
-
-            local color = isMurder and Color3.new(1,0,0) or (isSheriff and Color3.new(0,0.5,1) or Color3.new(0,1,0))
-            local highlight = char:FindFirstChild("MM2_ESP") or Instance.new("Highlight", char)
-            highlight.Name = "MM2_ESP"
-            highlight.FillColor = color
-            highlight.Enabled = true
-        end
-    end
-end
-
--- 버튼 이벤트
+-- ESP 및 순간이동 버튼 로직
 CheckBtn.MouseButton1Click:Connect(function()
     if KeyInput.Text == CORRECT_KEY then KeyFrame:Destroy(); MainFrame.Visible = true end
 end)
@@ -151,8 +130,28 @@ EspBtn.MouseButton1Click:Connect(function()
     EspBtn.Text = espEnabled and "ESP: ON" or "ESP: OFF"
     EspBtn.BackgroundColor3 = espEnabled and Color3.fromRGB(60, 255, 100) or Color3.fromRGB(171, 60, 255)
     task.spawn(function()
-        while espEnabled do applyESP(); task.wait(1) end
-        for _, v in pairs(Players:GetPlayers()) do if v.Character and v.Character:FindFirstChild("MM2_ESP") then v.Character.MM2_ESP:Destroy() end end
+        while espEnabled do
+            for _, v in pairs(Players:GetPlayers()) do
+                if v ~= lp and v.Character then
+                    local char = v.Character
+                    local isMurder = false
+                    local isSheriff = false
+                    -- 인벤토리 및 손 체크
+                    for _, item in pairs(v.Backpack:GetChildren()) do
+                        if item.Name:find("Knife") or item.Name:find("칼") then isMurder = true end
+                        for _, g in pairs(gunNames) do if item.Name == g then isSheriff = true end end
+                    end
+                    for _, item in pairs(char:GetChildren()) do
+                        if item.Name:find("Knife") or item.Name:find("칼") then isMurder = true end
+                        for _, g in pairs(gunNames) do if item.Name == g then isSheriff = true end end
+                    end
+                    local color = isMurder and Color3.new(1,0,0) or (isSheriff and Color3.new(0,0.5,1) or Color3.new(0,1,0))
+                    local h = char:FindFirstChild("MM2_ESP") or Instance.new("Highlight", char)
+                    h.Name = "MM2_ESP"; h.FillColor = color; h.Enabled = true
+                end
+            end
+            task.wait(1)
+        end
     end)
 end)
 
@@ -164,26 +163,25 @@ end)
 
 QuickTpBtn.MouseButton1Click:Connect(function()
     if isTeleporting then return end
-    local gun = getDroppedGun()
+    local gun = getValidDroppedGun()
     local root = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
     
     if gun and root then
         isTeleporting = true
         local oldPos = root.CFrame
         
-        -- 순간이동 (확실한 획득을 위해 0.2초간 위치 유지)
+        -- 정확한 획득을 위해 0.2초간 강제 고정
         local t = tick()
-        while tick() - t < 0.2 do
-            root.CFrame = gun.CFrame + Vector3.new(0, 1, 0)
+        while tick() - t < 0.25 do
+            root.CFrame = gun.CFrame + Vector3.new(0, 1.5, 0)
             RunService.Heartbeat:Wait()
         end
         
-        task.wait(0.1) -- 획득 판정 대기
-        root.CFrame = oldPos -- 복귀
+        task.wait(0.1)
+        root.CFrame = oldPos -- 획득 후 즉시 복귀
         isTeleporting = false
     else
         QuickTpBtn.Text = "없음"
         task.wait(0.5); QuickTpBtn.Text = "GET\nGUN"
     end
 end)
-
