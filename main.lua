@@ -1,222 +1,185 @@
--- 서비스 로드
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local HttpService = game:GetService("HttpService")
+-- [[ 서비스 선언 ]]
+local Player = game.Players.LocalPlayer
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local lp = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService") -- [수정] 누락되었던 서비스 추가
 
--- 설정
-local KEY_URL = "여기에_키_링크_넣으세요" 
-local CORRECT_KEY = "DORS123" 
+-- [[ 설정 ]]
+local CONFIG = {
+    KEY = "DORS123",
+    LINK = "https://github.com/YourName/YourRepo",
+    TITLE = "PREMIUM EXPLOIT V2"
+}
 
--- UI 생성
-local ScreenGui = Instance.new("ScreenGui", gethui() or game:GetService("CoreGui"))
-ScreenGui.Name = "AntiLua_Mobile_Pro"
+-- [[ 상태 변수 ]]
+local aimEnabled = false
+local wallHackEnabled = false
+local dragging = false
+local dragInput, dragStart, startPos
 
--- [1] 키 시스템 UI
-local KeyFrame = Instance.new("Frame", ScreenGui)
-KeyFrame.Size = UDim2.new(0, 300, 0, 200)
-KeyFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
-KeyFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-KeyFrame.BorderSizePixel = 0
+-- [[ UI 생성 ]]
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "OptimizedGui"
+local success, err = pcall(function() ScreenGui.Parent = CoreGui end)
+if not success then ScreenGui.Parent = Player.PlayerGui end
 
-local KeyCorner = Instance.new("UICorner", KeyFrame)
-local KeyTitle = Instance.new("TextLabel", KeyFrame)
-KeyTitle.Size = UDim2.new(1, 0, 0, 40)
-KeyTitle.Text = "AntiLua Key System"
-KeyTitle.TextColor3 = Color3.new(1, 1, 1)
-KeyTitle.BackgroundTransparency = 1
-KeyTitle.Font = Enum.Font.Ubuntu
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 260, 0, 300)
+MainFrame.Position = UDim2.new(0.5, -130, 0.5, -150)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
 
-local KeyInput = Instance.new("TextBox", KeyFrame)
-KeyInput.Size = UDim2.new(0, 240, 0, 40)
-KeyInput.Position = UDim2.new(0.5, -120, 0.4, 0)
-KeyInput.PlaceholderText = "Enter Key Here..."
-KeyInput.Text = ""
-KeyInput.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+local Corner = Instance.new("UICorner", MainFrame)
+Corner.CornerRadius = UDim.new(0, 10)
+
+-- 상단 타이틀 바 (드래그 핸들)
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Text = CONFIG.TITLE
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 10)
+
+-- [드래그 로직 개선: 모바일 최적화]
+Title.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+-- [ 섹션 컨테이너 ]
+local Container = Instance.new("Frame", MainFrame)
+Container.Size = UDim2.new(1, -20, 1, -60)
+Container.Position = UDim2.new(0, 10, 0, 50)
+Container.BackgroundTransparency = 1
+
+-- 1. 로그인 섹션
+local LoginSection = Instance.new("Frame", Container)
+LoginSection.Size = UDim2.new(1, 0, 1, 0)
+LoginSection.BackgroundTransparency = 1
+
+local KeyInput = Instance.new("TextBox", LoginSection)
+KeyInput.Size = UDim2.new(1, 0, 0, 40)
+KeyInput.PlaceholderText = "Enter Key..."
+KeyInput.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 KeyInput.TextColor3 = Color3.new(1, 1, 1)
 
-local GetKeyBtn = Instance.new("TextButton", KeyFrame)
-GetKeyBtn.Size = UDim2.new(0, 115, 0, 40)
-GetKeyBtn.Position = UDim2.new(0.5, -120, 0.7, 0)
-GetKeyBtn.Text = "Get Key"
-GetKeyBtn.BackgroundColor3 = Color3.fromRGB(171, 60, 255)
-GetKeyBtn.TextColor3 = Color3.new(1, 1, 1)
+local LoginBtn = Instance.new("TextButton", LoginSection)
+LoginBtn.Size = UDim2.new(1, 0, 0, 40)
+LoginBtn.Position = UDim2.new(0, 0, 0, 50)
+LoginBtn.Text = "LOGIN"
+LoginBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+LoginBtn.TextColor3 = Color3.new(1, 1, 1)
 
-local CheckBtn = Instance.new("TextButton", KeyFrame)
-CheckBtn.Size = UDim2.new(0, 115, 0, 40)
-CheckBtn.Position = UDim2.new(0.5, 5, 0.7, 0)
-CheckBtn.Text = "Check Key"
-CheckBtn.BackgroundColor3 = Color3.fromRGB(60, 255, 100)
-CheckBtn.TextColor3 = Color3.new(0, 0, 0)
+-- 2. 기능 섹션 (숨김 상태)
+local FeatureSection = Instance.new("Frame", Container)
+FeatureSection.Size = UDim2.new(1, 0, 1, 0)
+FeatureSection.BackgroundTransparency = 1
+FeatureSection.Visible = false
 
--- [2] 메인 UI (에임봇 버튼 추가를 위해 세로 길이 300으로 수정)
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 320, 0, 300)
-MainFrame.Position = UDim2.new(0.5, -160, 0.5, -150)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-MainFrame.Visible = false
+local function createToggleButton(text, pos, callback)
+    local btn = Instance.new("TextButton", FeatureSection)
+    btn.Size = UDim2.new(1, 0, 0, 45)
+    btn.Position = pos
+    btn.Text = text .. ": OFF"
+    btn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    
+    btn.MouseButton1Click:Connect(function()
+        callback(btn)
+    end)
+end
 
-local MainCorner = Instance.new("UICorner", MainFrame)
-local CloseBtn = Instance.new("TextButton", MainFrame)
-CloseBtn.Size = UDim2.new(0, 30, 0, 30)
-CloseBtn.Position = UDim2.new(1, -35, 0, 5)
-CloseBtn.Text = "X"
-CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-CloseBtn.TextColor3 = Color3.new(1, 1, 1)
+-- [[ 기능 로직 수정 ]]
 
-local ProfileImg = Instance.new("ImageLabel", MainFrame)
-ProfileImg.Size = UDim2.new(0, 60, 0, 60)
-ProfileImg.Position = UDim2.new(0.5, -30, 0.05, 0)
-ProfileImg.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-ProfileImg.Image = Players:GetUserThumbnailAsync(lp.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
-local ImgCorner = Instance.new("UICorner", ProfileImg)
-ImgCorner.CornerRadius = UDim.new(1, 0)
+local function getClosest()
+    local maxDist = 1000
+    local target = nil
+    for _, v in pairs(game.Players:GetPlayers()) do
+        if v ~= Player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            local pos = v.Character.HumanoidRootPart.Position
+            local mag = (pos - Player.Character.HumanoidRootPart.Position).Magnitude
+            if mag < maxDist then
+                maxDist = mag
+                target = v.Character
+            end
+        end
+    end
+    return target
+end
 
-local EspBtn = Instance.new("TextButton", MainFrame)
-EspBtn.Size = UDim2.new(0, 240, 0, 45)
-EspBtn.Position = UDim2.new(0.5, -120, 0.35, 0)
-EspBtn.Text = "Activate MM2 ESP"
-EspBtn.BackgroundColor3 = Color3.fromRGB(171, 60, 255)
-EspBtn.TextColor3 = Color3.new(1, 1, 1)
-Instance.new("UICorner", EspBtn)
-
-local AimBtn = Instance.new("TextButton", MainFrame)
-AimBtn.Size = UDim2.new(0, 240, 0, 45)
-AimBtn.Position = UDim2.new(0.5, -120, 0.55, 0)
-AimBtn.Text = "Silent Aim: OFF"
-AimBtn.BackgroundColor3 = Color3.fromRGB(255, 80, 0)
-AimBtn.TextColor3 = Color3.new(1, 1, 1)
-Instance.new("UICorner", AimBtn)
-
---- 기능 구현 ---
-
-local espEnabled = false
-local silentAimEnabled = false
-
--- 1. 키 시스템 로직
-GetKeyBtn.MouseButton1Click:Connect(function()
-    setclipboard(KEY_URL)
-    GetKeyBtn.Text = "Link Copied!"
-    task.wait(2)
-    GetKeyBtn.Text = "Get Key"
+-- 에임 보정 (RenderStepped 적용)
+RunService.RenderStepped:Connect(function()
+    if aimEnabled and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+        local target = getClosest()
+        if target then
+            -- 캐릭터가 타겟을 부드럽게 바라보게 함
+            local lookAt = CFrame.lookAt(Player.Character.HumanoidRootPart.Position, target.HumanoidRootPart.Position)
+            Player.Character.HumanoidRootPart.CFrame = Player.Character.HumanoidRootPart.CFrame:Lerp(lookAt, 0.1)
+        end
+    end
 end)
 
-CheckBtn.MouseButton1Click:Connect(function()
-    if KeyInput.Text == CORRECT_KEY then
-        KeyFrame:Destroy()
-        MainFrame.Visible = true
+-- [[ 이벤트 연결 ]]
+
+LoginBtn.MouseButton1Click:Connect(function()
+    if KeyInput.Text == CONFIG.KEY then
+        LoginSection.Visible = false
+        FeatureSection.Visible = true
+        Title.Text = "WELCOME, " .. Player.Name:upper()
     else
         KeyInput.Text = ""
-        KeyInput.PlaceholderText = "Wrong Key!"
-        task.wait(1)
-        KeyInput.PlaceholderText = "Enter Key Here..."
+        KeyInput.PlaceholderText = "INVALID KEY!"
     end
 end)
 
-CloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
+createToggleButton("Aimbot Lock", UDim2.new(0,0,0,0), function(btn)
+    aimEnabled = not aimEnabled
+    btn.Text = "Aimbot Lock: " .. (aimEnabled and "ON" or "OFF")
+    btn.BackgroundColor3 = aimEnabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(180, 50, 50)
 end)
 
--- 2. 통합 ESP 로직
-local function applyESP()
-    for _, v in pairs(Players:GetPlayers()) do
-        if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-            local char = v.Character
-            local backpack = v:FindFirstChild("Backpack")
-            local color = Color3.fromRGB(0, 255, 0) 
+createToggleButton("Wall Visuals", UDim2.new(0,0,0,55), function(btn)
+    wallHackEnabled = not wallHackEnabled
+    btn.Text = "Wall Visuals: " .. (wallHackEnabled and "ON" or "OFF")
+    btn.BackgroundColor3 = wallHackEnabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(180, 50, 50)
+end)
 
-            local knifeNames = {"Knife", "Slasher", "Saw", "Blade", "칼"}
-            local gunNames = {"Gun", "Revolver", "Luger", "Sheriff", "총"}
-
-            local isMurder = false
-            local isSheriff = false
-
-            for _, name in pairs(knifeNames) do
-                if char:FindFirstChild(name) or (backpack and backpack:FindFirstChild(name)) then
-                    isMurder = true
-                    break
-                end
-            end
-
-            for _, name in pairs(gunNames) do
-                if char:FindFirstChild(name) or (backpack and backpack:FindFirstChild(name)) then
-                    isSheriff = true
-                    break
-                end
-            end
-
-            if isMurder then
-                color = Color3.fromRGB(255, 0, 0)
-            elseif isSheriff then
-                color = Color3.fromRGB(0, 150, 255)
-            end
-
-            local highlight = char:FindFirstChild("MM2_ESP")
-            if not highlight then
-                highlight = Instance.new("Highlight")
-                highlight.Name = "MM2_ESP"
-                highlight.Parent = char
-            end
+-- 시각적 효과 (개선)
+UserInputService.InputBegan:Connect(function(input, proc)
+    if not proc and wallHackEnabled and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1) then
+        local t = getClosest()
+        if t then
+            local beam = Instance.new("Part", workspace)
+            beam.Anchored = true
+            beam.CanCollide = false
+            beam.Material = Enum.Material.Neon
+            beam.Color = Color3.fromRGB(255, 0, 0)
+            beam.Size = Vector3.new(0.2, 0.2, (Player.Character.Head.Position - t.HumanoidRootPart.Position).Magnitude)
+            beam.CFrame = CFrame.lookAt(Player.Character.Head.Position, t.HumanoidRootPart.Position) * CFrame.new(0, 0, -beam.Size.Z/2)
             
-            highlight.FillColor = color
-            highlight.OutlineColor = Color3.new(1, 1, 1)
-            highlight.FillTransparency = 0.4
-            highlight.Enabled = true
-        end
-    end
-end
-
-EspBtn.MouseButton1Click:Connect(function()
-    espEnabled = not espEnabled
-    EspBtn.Text = espEnabled and "ESP: ON" or "ESP: OFF"
-    EspBtn.BackgroundColor3 = espEnabled and Color3.fromRGB(60, 255, 100) or Color3.fromRGB(171, 60, 255)
-    
-    if espEnabled then
-        task.spawn(function()
-            while espEnabled do
-                applyESP()
-                task.wait(0.3)
-            end
-        end)
-    else
-        for _, v in pairs(Players:GetPlayers()) do
-            if v.Character and v.Character:FindFirstChild("MM2_ESP") then
-                v.Character.MM2_ESP:Destroy()
-            end
+            task.delay(0.1, function() beam:Destroy() end)
         end
     end
 end)
 
--- 3. 사일런트 에임 로직 (총 발사 유도)
-local function getMurderer()
-    for _, v in pairs(Players:GetPlayers()) do
-        if v.Character and v.Character:FindFirstChild("MM2_ESP") then
-            if v.Character.MM2_ESP.FillColor == Color3.fromRGB(255, 0, 0) then
-                return v.Character:FindFirstChild("HumanoidRootPart")
-            end
-        end
-    end
-    return nil
-end
-
--- 총을 쏠 때 타겟 위치를 변조
-local oldNamecall
-oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-    local method = getnamecallmethod()
-    local args = {...}
-
-    if silentAimEnabled and (method == "Raycast" or method == "FindPartOnRay") then
-        local target = getMurderer()
-        if target then
-            return target.Position -- 탄환을 살인자 위치로 유도
-        end
-    end
-    return oldNamecall(self, ...)
-end)
-
-AimBtn.MouseButton1Click:Connect(function()
-    silentAimEnabled = not silentAimEnabled
-    AimBtn.Text = silentAimEnabled and "Silent Aim: ON" or "Silent Aim: OFF"
-    AimBtn.BackgroundColor3 = silentAimEnabled and Color3.fromRGB(60, 255, 100) or Color3.fromRGB(255, 80, 0)
-end)
