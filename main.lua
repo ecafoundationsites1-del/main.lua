@@ -1,119 +1,223 @@
--- [[ 서비스 선언 ]]
+-- 서비스 로드
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
+local lp = Players.LocalPlayer
 
-local Player = Players.LocalPlayer
+-- 설정
+local KEY_URL = "여기에_키_링크_넣으세요" 
+local CORRECT_KEY = "DORS123" 
 
--- [[ 기존 UI 제거 (중복 실행 방지) ]]
-local oldGui = Player.PlayerGui:FindFirstChild("OptimizedGui") or (game:GetService("CoreGui"):FindFirstChild("OptimizedGui"))
-if oldGui then oldGui:Destroy() end
+-- UI 생성
+local ScreenGui = Instance.new("ScreenGui", gethui() or game:GetService("CoreGui"))
+ScreenGui.Name = "AntiLua_Mobile_Pro"
 
--- [[ 설정 ]]
-local CONFIG = {
-    KEY = "DORS123",
-    TITLE = "DELTA PREMIUM V2"
-}
+-- [1] 키 시스템 UI
+local KeyFrame = Instance.new("Frame", ScreenGui)
+KeyFrame.Size = UDim2.new(0, 300, 0, 200)
+KeyFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+KeyFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+KeyFrame.BorderSizePixel = 0
 
--- [[ UI 생성 - Delta 최적화 ]]
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "OptimizedGui"
-ScreenGui.ResetOnSpawn = false -- 캐릭터 죽어도 유지
--- Delta에서는 PlayerGui가 가장 확실합니다.
-ScreenGui.Parent = Player:WaitForChild("PlayerGui")
+local KeyCorner = Instance.new("UICorner", KeyFrame)
+local KeyTitle = Instance.new("TextLabel", KeyFrame)
+KeyTitle.Size = UDim2.new(1, 0, 0, 40)
+KeyTitle.Text = "AntiLua Key System"
+KeyTitle.TextColor3 = Color3.new(1, 1, 1)
+KeyTitle.BackgroundTransparency = 1
+KeyTitle.Font = Enum.Font.Ubuntu
 
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 260, 0, 300)
-MainFrame.Position = UDim2.new(0.5, -130, 0.5, -150)
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Draggable = true -- Delta에서는 기본 Draggable이 먹히는 경우가 많음
-
-local Corner = Instance.new("UICorner", MainFrame)
-Corner.CornerRadius = UDim.new(0, 10)
-
--- 타이틀
-local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Text = CONFIG.TITLE
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
-Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 10)
-
--- [ 로그인 섹션 ]
-local LoginSection = Instance.new("Frame", MainFrame)
-LoginSection.Size = UDim2.new(1, -20, 1, -60)
-LoginSection.Position = UDim2.new(0, 10, 0, 50)
-LoginSection.BackgroundTransparency = 1
-
-local KeyInput = Instance.new("TextBox", LoginSection)
-KeyInput.Size = UDim2.new(1, 0, 0, 40)
-KeyInput.Position = UDim2.new(0, 0, 0.2, 0)
-KeyInput.PlaceholderText = "인증키 입력..."
+local KeyInput = Instance.new("TextBox", KeyFrame)
+KeyInput.Size = UDim2.new(0, 240, 0, 40)
+KeyInput.Position = UDim2.new(0.5, -120, 0.4, 0)
+KeyInput.PlaceholderText = "Enter Key Here..."
 KeyInput.Text = ""
-KeyInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+KeyInput.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
 KeyInput.TextColor3 = Color3.new(1, 1, 1)
 
-local LoginBtn = Instance.new("TextButton", LoginSection)
-LoginBtn.Size = UDim2.new(1, 0, 0, 40)
-LoginBtn.Position = UDim2.new(0, 0, 0.5, 0)
-LoginBtn.Text = "로그인 (DORS123)"
-LoginBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
-LoginBtn.TextColor3 = Color3.new(1, 1, 1)
+local GetKeyBtn = Instance.new("TextButton", KeyFrame)
+GetKeyBtn.Size = UDim2.new(0, 115, 0, 40)
+GetKeyBtn.Position = UDim2.new(0.5, -120, 0.7, 0)
+GetKeyBtn.Text = "Get Key"
+GetKeyBtn.BackgroundColor3 = Color3.fromRGB(171, 60, 255)
+GetKeyBtn.TextColor3 = Color3.new(1, 1, 1)
 
--- [ 기능 섹션 ]
-local FeatureSection = Instance.new("Frame", MainFrame)
-FeatureSection.Size = UDim2.new(1, -20, 1, -60)
-FeatureSection.Position = UDim2.new(0, 10, 0, 50)
-FeatureSection.BackgroundTransparency = 1
-FeatureSection.Visible = false
+local CheckBtn = Instance.new("TextButton", KeyFrame)
+CheckBtn.Size = UDim2.new(0, 115, 0, 40)
+CheckBtn.Position = UDim2.new(0.5, 5, 0.7, 0)
+CheckBtn.Text = "Check Key"
+CheckBtn.BackgroundColor3 = Color3.fromRGB(60, 255, 100)
+CheckBtn.TextColor3 = Color3.new(0, 0, 0)
 
-local aimEnabled = false
-local AimBtn = Instance.new("TextButton", FeatureSection)
-AimBtn.Size = UDim2.new(1, 0, 0, 45)
-AimBtn.Text = "Aimbot: OFF"
-AimBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+-- [2] 메인 UI (에임봇 버튼 추가를 위해 세로 길이 300으로 수정)
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 320, 0, 300)
+MainFrame.Position = UDim2.new(0.5, -160, 0.5, -150)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+MainFrame.Visible = false
+
+local MainCorner = Instance.new("UICorner", MainFrame)
+local CloseBtn = Instance.new("TextButton", MainFrame)
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -35, 0, 5)
+CloseBtn.Text = "X"
+CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+CloseBtn.TextColor3 = Color3.new(1, 1, 1)
+
+local ProfileImg = Instance.new("ImageLabel", MainFrame)
+ProfileImg.Size = UDim2.new(0, 60, 0, 60)
+ProfileImg.Position = UDim2.new(0.5, -30, 0.05, 0)
+ProfileImg.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+ProfileImg.Image = Players:GetUserThumbnailAsync(lp.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
+local ImgCorner = Instance.new("UICorner", ProfileImg)
+ImgCorner.CornerRadius = UDim.new(1, 0)
+
+local EspBtn = Instance.new("TextButton", MainFrame)
+EspBtn.Size = UDim2.new(0, 240, 0, 45)
+EspBtn.Position = UDim2.new(0.5, -120, 0.35, 0)
+EspBtn.Text = "Activate MM2 ESP"
+EspBtn.BackgroundColor3 = Color3.fromRGB(171, 60, 255)
+EspBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", EspBtn)
+
+local AimBtn = Instance.new("TextButton", MainFrame)
+AimBtn.Size = UDim2.new(0, 240, 0, 45)
+AimBtn.Position = UDim2.new(0.5, -120, 0.55, 0)
+AimBtn.Text = "Silent Aim: OFF"
+AimBtn.BackgroundColor3 = Color3.fromRGB(255, 80, 0)
 AimBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", AimBtn)
 
--- [[ 로직 ]]
-LoginBtn.MouseButton1Click:Connect(function()
-    if KeyInput.Text == CONFIG.KEY then
-        LoginSection.Visible = false
-        FeatureSection.Visible = true
-        Title.Text = "환영합니다, " .. Player.Name
+--- 기능 구현 ---
+
+local espEnabled = false
+local silentAimEnabled = false
+
+-- 1. 키 시스템 로직
+GetKeyBtn.MouseButton1Click:Connect(function()
+    setclipboard(KEY_URL)
+    GetKeyBtn.Text = "Link Copied!"
+    task.wait(2)
+    GetKeyBtn.Text = "Get Key"
+end)
+
+CheckBtn.MouseButton1Click:Connect(function()
+    if KeyInput.Text == CORRECT_KEY then
+        KeyFrame:Destroy()
+        MainFrame.Visible = true
     else
-        KeyInput.PlaceholderText = "잘못된 키!"
         KeyInput.Text = ""
+        KeyInput.PlaceholderText = "Wrong Key!"
+        task.wait(1)
+        KeyInput.PlaceholderText = "Enter Key Here..."
     end
+end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- 2. 통합 ESP 로직
+local function applyESP()
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            local char = v.Character
+            local backpack = v:FindFirstChild("Backpack")
+            local color = Color3.fromRGB(0, 255, 0) 
+
+            local knifeNames = {"Knife", "Slasher", "Saw", "Blade", "칼"}
+            local gunNames = {"Gun", "Revolver", "Luger", "Sheriff", "총"}
+
+            local isMurder = false
+            local isSheriff = false
+
+            for _, name in pairs(knifeNames) do
+                if char:FindFirstChild(name) or (backpack and backpack:FindFirstChild(name)) then
+                    isMurder = true
+                    break
+                end
+            end
+
+            for _, name in pairs(gunNames) do
+                if char:FindFirstChild(name) or (backpack and backpack:FindFirstChild(name)) then
+                    isSheriff = true
+                    break
+                end
+            end
+
+            if isMurder then
+                color = Color3.fromRGB(255, 0, 0)
+            elseif isSheriff then
+                color = Color3.fromRGB(0, 150, 255)
+            end
+
+            local highlight = char:FindFirstChild("MM2_ESP")
+            if not highlight then
+                highlight = Instance.new("Highlight")
+                highlight.Name = "MM2_ESP"
+                highlight.Parent = char
+            end
+            
+            highlight.FillColor = color
+            highlight.OutlineColor = Color3.new(1, 1, 1)
+            highlight.FillTransparency = 0.4
+            highlight.Enabled = true
+        end
+    end
+end
+
+EspBtn.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    EspBtn.Text = espEnabled and "ESP: ON" or "ESP: OFF"
+    EspBtn.BackgroundColor3 = espEnabled and Color3.fromRGB(60, 255, 100) or Color3.fromRGB(171, 60, 255)
+    
+    if espEnabled then
+        task.spawn(function()
+            while espEnabled do
+                applyESP()
+                task.wait(0.3)
+            end
+        end)
+    else
+        for _, v in pairs(Players:GetPlayers()) do
+            if v.Character and v.Character:FindFirstChild("MM2_ESP") then
+                v.Character.MM2_ESP:Destroy()
+            end
+        end
+    end
+end)
+
+-- 3. 사일런트 에임 로직 (총 발사 유도)
+local function getMurderer()
+    for _, v in pairs(Players:GetPlayers()) do
+        if v.Character and v.Character:FindFirstChild("MM2_ESP") then
+            if v.Character.MM2_ESP.FillColor == Color3.fromRGB(255, 0, 0) then
+                return v.Character:FindFirstChild("HumanoidRootPart")
+            end
+        end
+    end
+    return nil
+end
+
+-- 총을 쏠 때 타겟 위치를 변조
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+
+    if silentAimEnabled and (method == "Raycast" or method == "FindPartOnRay") then
+        local target = getMurderer()
+        if target then
+            return target.Position -- 탄환을 살인자 위치로 유도
+        end
+    end
+    return oldNamecall(self, ...)
 end)
 
 AimBtn.MouseButton1Click:Connect(function()
-    aimEnabled = not aimEnabled
-    AimBtn.Text = "Aimbot: " .. (aimEnabled and "ON" or "OFF")
-    AimBtn.BackgroundColor3 = aimEnabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(150, 50, 50)
-end)
-
--- 에임봇 작동 (가장 가까운 사람 보기)
-RunService.RenderStepped:Connect(function()
-    if aimEnabled and Player.Character then
-        local closest = nil
-        local dist = 1000
-        for _, v in pairs(Players:GetPlayers()) do
-            if v ~= Player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                local d = (v.Character.HumanoidRootPart.Position - Player.Character.HumanoidRootPart.Position).Magnitude
-                if d < dist then
-                    dist = d
-                    closest = v.Character
-                end
-            end
-        end
-        if closest then
-            workspace.CurrentCamera.CFrame = CFrame.lookAt(workspace.CurrentCamera.CFrame.Position, closest.HumanoidRootPart.Position)
-        end
-    end
+    silentAimEnabled = not silentAimEnabled
+    AimBtn.Text = silentAimEnabled and "Silent Aim: ON" or "Silent Aim: OFF"
+    AimBtn.BackgroundColor3 = silentAimEnabled and Color3.fromRGB(60, 255, 100) or Color3.fromRGB(255, 80, 0)
 end)
 
