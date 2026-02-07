@@ -1,185 +1,169 @@
--- [[ 서비스 선언 ]]
+-- [[ 만우절 기념: 라이벌 개발자용 혼돈의 에디션 ]] --
+
 local Player = game.Players.LocalPlayer
+local Character = Player.Character or Player.CharacterAdded:Wait()
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
-local TweenService = game:GetService("TweenService") -- [수정] 누락되었던 서비스 추가
+local UserInputService = game.GetService("UserInputService")
+local TweenService = game.GetService("TweenService")
 
--- [[ 설정 ]]
-local CONFIG = {
-    KEY = "DORS123",
-    LINK = "https://github.com/YourName/YourRepo",
-    TITLE = "PREMIUM EXPLOIT V2"
-}
-
--- [[ 상태 변수 ]]
-local aimEnabled = false
+-- [ 설정 및 변수 ]
+local CORRECT_KEY = "DORS123"
+local KEY_LINK = "https://github.com/YourName/YourRepo" -- 여기에 본인의 깃허브 주소 입력
+local aimModeEnabled = false
 local wallHackEnabled = false
-local dragging = false
-local dragInput, dragStart, startPos
 
--- [[ UI 생성 ]]
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "OptimizedGui"
-local success, err = pcall(function() ScreenGui.Parent = CoreGui end)
-if not success then ScreenGui.Parent = Player.PlayerGui end
+-- [ UI 생성 ]
+local MainGui = Instance.new("ScreenGui", Player.PlayerGui)
+MainGui.Name = "AprilFoolsMenu"
 
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 260, 0, 300)
-MainFrame.Position = UDim2.new(0.5, -130, 0.5, -150)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
+-- 키 입력 창
+local KeyFrame = Instance.new("Frame", MainGui)
+KeyFrame.Size = UDim2.new(0, 300, 0, 220)
+KeyFrame.Position = UDim2.new(0.5, -150, 0.5, -110)
+KeyFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+KeyFrame.BorderSizePixel = 0
 
-local Corner = Instance.new("UICorner", MainFrame)
-Corner.CornerRadius = UDim.new(0, 10)
+local UICorner = Instance.new("UICorner", KeyFrame)
+UICorner.CornerRadius = ToolHeight and UDim.new(0, 10) or UDim.new(0, 10)
 
--- 상단 타이틀 바 (드래그 핸들)
-local Title = Instance.new("TextLabel", MainFrame)
+local Title = Instance.new("TextLabel", KeyFrame)
+Title.Text = "APRIL FOOL SYSTEM"
 Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Text = CONFIG.TITLE
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
-Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 10)
 
--- [드래그 로직 개선: 모바일 최적화]
-Title.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = MainFrame.Position
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - dragStart
-        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
-    end
-end)
-
--- [ 섹션 컨테이너 ]
-local Container = Instance.new("Frame", MainFrame)
-Container.Size = UDim2.new(1, -20, 1, -60)
-Container.Position = UDim2.new(0, 10, 0, 50)
-Container.BackgroundTransparency = 1
-
--- 1. 로그인 섹션
-local LoginSection = Instance.new("Frame", Container)
-LoginSection.Size = UDim2.new(1, 0, 1, 0)
-LoginSection.BackgroundTransparency = 1
-
-local KeyInput = Instance.new("TextBox", LoginSection)
-KeyInput.Size = UDim2.new(1, 0, 0, 40)
-KeyInput.PlaceholderText = "Enter Key..."
-KeyInput.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+local KeyInput = Instance.new("TextBox", KeyFrame)
+KeyInput.PlaceholderText = "인증키 입력..."
+KeyInput.Size = UDim2.new(0.8, 0, 0, 40)
+KeyInput.Position = UDim2.new(0.1, 0, 0.25, 0)
+KeyInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 KeyInput.TextColor3 = Color3.new(1, 1, 1)
 
-local LoginBtn = Instance.new("TextButton", LoginSection)
-LoginBtn.Size = UDim2.new(1, 0, 0, 40)
-LoginBtn.Position = UDim2.new(0, 0, 0, 50)
-LoginBtn.Text = "LOGIN"
-LoginBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-LoginBtn.TextColor3 = Color3.new(1, 1, 1)
+local GetKeyBtn = Instance.new("TextButton", KeyFrame)
+GetKeyBtn.Text = "키 받기 (링크 복사)"
+GetKeyBtn.Size = UDim2.new(0.8, 0, 0, 35)
+GetKeyBtn.Position = UDim2.new(0.1, 0, 0.5, 0)
+GetKeyBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+GetKeyBtn.TextColor3 = Color3.new(1, 1, 1)
 
--- 2. 기능 섹션 (숨김 상태)
-local FeatureSection = Instance.new("Frame", Container)
-FeatureSection.Size = UDim2.new(1, 0, 1, 0)
-FeatureSection.BackgroundTransparency = 1
-FeatureSection.Visible = false
+local SubmitBtn = Instance.new("TextButton", KeyFrame)
+SubmitBtn.Text = "인증하기"
+SubmitBtn.Size = UDim2.new(0.8, 0, 0, 35)
+SubmitBtn.Position = UDim2.new(0.1, 0, 0.75, 0)
+SubmitBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+SubmitBtn.TextColor3 = Color3.new(1, 1, 1)
 
-local function createToggleButton(text, pos, callback)
-    local btn = Instance.new("TextButton", FeatureSection)
-    btn.Size = UDim2.new(1, 0, 0, 45)
-    btn.Position = pos
-    btn.Text = text .. ": OFF"
-    btn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-    
-    btn.MouseButton1Click:Connect(function()
-        callback(btn)
-    end)
-end
+-- 기능 제어 창 (인증 후 표시)
+local ToolFrame = Instance.new("Frame", MainGui)
+ToolFrame.Visible = false
+ToolFrame.Size = UDim2.new(0, 220, 0, 130)
+ToolFrame.Position = UDim2.new(0, 20, 0.5, -65)
+ToolFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Instance.new("UICorner", ToolFrame).CornerRadius = UDim.new(0, 10)
 
--- [[ 기능 로직 수정 ]]
+local AimBtn = Instance.new("TextButton", ToolFrame)
+AimBtn.Text = "에임 모드: OFF"
+AimBtn.Size = UDim2.new(0.9, 0, 0, 40)
+AimBtn.Position = UDim2.new(0.05, 0, 0.15, 0)
+AimBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
 
-local function getClosest()
-    local maxDist = 1000
-    local target = nil
+local WallBtn = Instance.new("TextButton", ToolFrame)
+WallBtn.Text = "총알 뚫기: OFF"
+WallBtn.Size = UDim2.new(0.9, 0, 0, 40)
+WallBtn.Position = UDim2.new(0.05, 0, 0.55, 0)
+WallBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+
+-- [ 기능 로직 ]
+
+-- 가까운 적 찾기
+local function getClosestPlayer()
+    local closest = nil
+    local dist = math.huge
     for _, v in pairs(game.Players:GetPlayers()) do
         if v ~= Player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-            local pos = v.Character.HumanoidRootPart.Position
-            local mag = (pos - Player.Character.HumanoidRootPart.Position).Magnitude
-            if mag < maxDist then
-                maxDist = mag
-                target = v.Character
+            local d = (v.Character.HumanoidRootPart.Position - Player.Character.HumanoidRootPart.Position).Magnitude
+            if d < dist then
+                dist = d
+                closest = v.Character
             end
         end
     end
-    return target
+    return closest
 end
 
--- 에임 보정 (RenderStepped 적용)
+-- 에임 꺾기 (RenderStepped)
 RunService.RenderStepped:Connect(function()
-    if aimEnabled and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
-        local target = getClosest()
-        if target then
-            -- 캐릭터가 타겟을 부드럽게 바라보게 함
-            local lookAt = CFrame.lookAt(Player.Character.HumanoidRootPart.Position, target.HumanoidRootPart.Position)
-            Player.Character.HumanoidRootPart.CFrame = Player.Character.HumanoidRootPart.CFrame:Lerp(lookAt, 0.1)
+    if aimModeEnabled and Player.Character and Player.Character:FindFirstChild("UpperTorso") then
+        local targetChar = getClosestPlayer()
+        if targetChar then
+            local waist = Player.Character.UpperTorso:FindFirstChild("Waist")
+            if waist then
+                local lookVector = (targetChar.HumanoidRootPart.Position - Player.Character.Head.Position).Unit
+                waist.C0 = waist.C0:Lerp(CFrame.new(waist.C0.Position, lookVector), 0.15)
+            end
         end
     end
 end)
 
--- [[ 이벤트 연결 ]]
+-- 총알 발사 (마우스 클릭 시 유도탄 생성 시뮬레이션)
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 and wallHackEnabled then
+        local target = getClosestPlayer()
+        if target then
+            -- [베지에 곡선 총알 로직]
+            local bullet = Instance.new("Part", workspace)
+            bullet.Size = Vector3.new(0.5, 0.5, 2)
+            bullet.Color = Color3.new(1, 0, 0)
+            bullet.CanCollide = false
+            bullet.Anchored = true
+            
+            local startPos = Player.Character.Head.Position
+            local midPoint = startPos + (target.HumanoidRootPart.Position - startPos) / 2 + Vector3.new(0, 10, 0)
+            
+            task.spawn(function()
+                for t = 0, 1, 0.05 do
+                    local p2 = target.HumanoidRootPart.Position
+                    local nextPos = (1-t)^2 * startPos + 2*(1-t)*t * midPoint + t^2 * p2
+                    bullet.CFrame = CFrame.lookAt(nextPos, p2)
+                    task.wait(0.02)
+                end
+                bullet:Destroy()
+            end)
+        end
+    end
+end)
 
-LoginBtn.MouseButton1Click:Connect(function()
-    if KeyInput.Text == CONFIG.KEY then
-        LoginSection.Visible = false
-        FeatureSection.Visible = true
-        Title.Text = "WELCOME, " .. Player.Name:upper()
+-- [ 버튼 이벤트 ]
+GetKeyBtn.MouseButton1Click:Connect(function()
+    if setclipboard then
+        setclipboard(KEY_LINK)
+        GetKeyBtn.Text = "링크 복사 완료!"
+    else
+        print("링크: " .. KEY_LINK)
+    end
+end)
+
+SubmitBtn.MouseButton1Click:Connect(function()
+    if KeyInput.Text == CORRECT_KEY then
+        KeyFrame.Visible = false
+        ToolFrame.Visible = true
     else
         KeyInput.Text = ""
-        KeyInput.PlaceholderText = "INVALID KEY!"
+        KeyInput.PlaceholderText = "잘못된 키!"
     end
 end)
 
-createToggleButton("Aimbot Lock", UDim2.new(0,0,0,0), function(btn)
-    aimEnabled = not aimEnabled
-    btn.Text = "Aimbot Lock: " .. (aimEnabled and "ON" or "OFF")
-    btn.BackgroundColor3 = aimEnabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(180, 50, 50)
+AimBtn.MouseButton1Click:Connect(function()
+    aimModeEnabled = not aimModeEnabled
+    AimBtn.Text = "에임 모드: " .. (aimModeEnabled and "ON" or "OFF")
+    AimBtn.BackgroundColor3 = aimModeEnabled and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(180, 0, 0)
 end)
 
-createToggleButton("Wall Visuals", UDim2.new(0,0,0,55), function(btn)
+WallBtn.MouseButton1Click:Connect(function()
     wallHackEnabled = not wallHackEnabled
-    btn.Text = "Wall Visuals: " .. (wallHackEnabled and "ON" or "OFF")
-    btn.BackgroundColor3 = wallHackEnabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(180, 50, 50)
-end)
-
--- 시각적 효과 (개선)
-UserInputService.InputBegan:Connect(function(input, proc)
-    if not proc and wallHackEnabled and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1) then
-        local t = getClosest()
-        if t then
-            local beam = Instance.new("Part", workspace)
-            beam.Anchored = true
-            beam.CanCollide = false
-            beam.Material = Enum.Material.Neon
-            beam.Color = Color3.fromRGB(255, 0, 0)
-            beam.Size = Vector3.new(0.2, 0.2, (Player.Character.Head.Position - t.HumanoidRootPart.Position).Magnitude)
-            beam.CFrame = CFrame.lookAt(Player.Character.Head.Position, t.HumanoidRootPart.Position) * CFrame.new(0, 0, -beam.Size.Z/2)
-            
-            task.delay(0.1, function() beam:Destroy() end)
-        end
-    end
+    WallBtn.Text = "총알 뚫기: " .. (wallHackEnabled and "ON" or "OFF")
+    WallBtn.BackgroundColor3 = wallHackEnabled and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(180, 0, 0)
 end)
 
