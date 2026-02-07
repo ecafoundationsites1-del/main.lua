@@ -1,222 +1,29 @@
--- 서비스 로드
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local HttpService = game:GetService("HttpService")
-local UserInputService = game:GetService("UserInputService")
-local lp = Players.LocalPlayer
-
--- 설정 (키 시스템)
-local KEY_URL = "여기에_키_링크_넣으세요" 
-local CORRECT_KEY = "DORS123" 
-
--- UI 생성
-local ScreenGui = Instance.new("ScreenGui", gethui() or game:GetService("CoreGui"))
-ScreenGui.Name = "AntiLua_Mobile_Pro_V2"
-
--- [1] 키 시스템 UI
-local KeyFrame = Instance.new("Frame", ScreenGui)
-KeyFrame.Size = UDim2.new(0, 300, 0, 200)
-KeyFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
-KeyFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-KeyFrame.BorderSizePixel = 0
-
-local KeyCorner = Instance.new("UICorner", KeyFrame)
-local KeyTitle = Instance.new("TextLabel", KeyFrame)
-KeyTitle.Size = UDim2.new(1, 0, 0, 40)
-KeyTitle.Text = "AntiLua Pro - Key System"
-KeyTitle.TextColor3 = Color3.new(1, 1, 1)
-KeyTitle.BackgroundTransparency = 1
-KeyTitle.Font = Enum.Font.Ubuntu
-
-local KeyInput = Instance.new("TextBox", KeyFrame)
-KeyInput.Size = UDim2.new(0, 240, 0, 40)
-KeyInput.Position = UDim2.new(0.5, -120, 0.4, 0)
-KeyInput.PlaceholderText = "Enter Key Here..."
-KeyInput.Text = ""
-KeyInput.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-KeyInput.TextColor3 = Color3.new(1, 1, 1)
-
-local GetKeyBtn = Instance.new("TextButton", KeyFrame)
-GetKeyBtn.Size = UDim2.new(0, 115, 0, 40)
-GetKeyBtn.Position = UDim2.new(0.5, -120, 0.7, 0)
-GetKeyBtn.Text = "Get Key"
-GetKeyBtn.BackgroundColor3 = Color3.fromRGB(171, 60, 255)
-GetKeyBtn.TextColor3 = Color3.new(1, 1, 1)
-
-local CheckBtn = Instance.new("TextButton", KeyFrame)
-CheckBtn.Size = UDim2.new(0, 115, 0, 40)
-CheckBtn.Position = UDim2.new(0.5, 5, 0.7, 0)
-CheckBtn.Text = "Check Key"
-CheckBtn.BackgroundColor3 = Color3.fromRGB(60, 255, 100)
-CheckBtn.TextColor3 = Color3.new(0, 0, 0)
-
--- [2] 메인 UI
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 320, 0, 320)
-MainFrame.Position = UDim2.new(0.5, -160, 0.5, -160)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-MainFrame.Visible = false
-
-local MainCorner = Instance.new("UICorner", MainFrame)
-local CloseBtn = Instance.new("TextButton", MainFrame)
-CloseBtn.Size = UDim2.new(0, 30, 0, 30)
-CloseBtn.Position = UDim2.new(1, -35, 0, 5)
-CloseBtn.Text = "X"
-CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-CloseBtn.TextColor3 = Color3.new(1, 1, 1)
-
-local ProfileImg = Instance.new("ImageLabel", MainFrame)
-ProfileImg.Size = UDim2.new(0, 60, 0, 60)
-ProfileImg.Position = UDim2.new(0.5, -30, 0.05, 0)
-ProfileImg.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-ProfileImg.Image = Players:GetUserThumbnailAsync(lp.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
-local ImgCorner = Instance.new("UICorner", ProfileImg)
-ImgCorner.CornerRadius = UDim.new(1, 0)
-
--- 버튼 1: ESP
-local EspBtn = Instance.new("TextButton", MainFrame)
-EspBtn.Size = UDim2.new(0, 240, 0, 50)
-EspBtn.Position = UDim2.new(0.5, -120, 0.35, 0)
-EspBtn.Text = "Activate MM2 ESP"
-EspBtn.BackgroundColor3 = Color3.fromRGB(171, 60, 255)
-EspBtn.TextColor3 = Color3.new(1, 1, 1)
-Instance.new("UICorner", EspBtn)
-
--- 버튼 2: 사일런트 에임 (벽 관통 포함)
-local AimBtn = Instance.new("TextButton", MainFrame)
-AimBtn.Size = UDim2.new(0, 240, 0, 50)
-AimBtn.Position = UDim2.new(0.5, -120, 0.55, 0)
-AimBtn.Text = "Silent Aim (Wallbang): OFF"
-AimBtn.BackgroundColor3 = Color3.fromRGB(255, 80, 0)
-AimBtn.TextColor3 = Color3.new(1, 1, 1)
-Instance.new("UICorner", AimBtn)
-
---- 기능 스크립트 ---
-
-local espEnabled = false
+-- [라이벌 전용 벽 관통/에임봇 로직]
 local silentAimEnabled = false
-
--- 1. 키 시스템 로직
-GetKeyBtn.MouseButton1Click:Connect(function()
-    setclipboard(KEY_URL)
-    GetKeyBtn.Text = "Link Copied!"
-    task.wait(2)
-    GetKeyBtn.Text = "Get Key"
-end)
-
-CheckBtn.MouseButton1Click:Connect(function()
-    if KeyInput.Text == CORRECT_KEY then
-        KeyFrame:Destroy()
-        MainFrame.Visible = true
-    else
-        KeyInput.Text = ""
-        KeyInput.PlaceholderText = "Wrong Key!"
-        task.wait(1)
-        KeyInput.PlaceholderText = "Enter Key Here..."
-    end
-end)
-
-CloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
-
--- 2. ESP 및 실시간 역할 탐지
-local function applyESP()
-    for _, v in pairs(Players:GetPlayers()) do
-        if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-            local char = v.Character
-            local backpack = v:FindFirstChild("Backpack")
-            local color = Color3.fromRGB(0, 255, 0) -- 시민
-
-            local knifeNames = {"Knife", "Slasher", "Saw", "Blade", "칼"}
-            local gunNames = {"Gun", "Revolver", "Luger", "Sheriff", "총"}
-
-            local isMurder = false
-            local isSheriff = false
-
-            -- 가방 및 손에 든 무기 검사
-            for _, name in pairs(knifeNames) do
-                if char:FindFirstChild(name) or (backpack and backpack:FindFirstChild(name)) then
-                    isMurder = true break
-                end
-            end
-            for _, name in pairs(gunNames) do
-                if char:FindFirstChild(name) or (backpack and backpack:FindFirstChild(name)) then
-                    isSheriff = true break
-                end
-            end
-
-            if isMurder then color = Color3.fromRGB(255, 0, 0)
-            elseif isSheriff then color = Color3.fromRGB(0, 150, 255) end
-
-            local highlight = char:FindFirstChild("MM2_ESP")
-            if not highlight then
-                highlight = Instance.new("Highlight", char)
-                highlight.Name = "MM2_ESP"
-            end
-            highlight.FillColor = color
-            highlight.OutlineColor = Color3.new(1, 1, 1)
-            highlight.FillTransparency = 0.4
-            highlight.Enabled = true
-        end
-    end
-end
-
-EspBtn.MouseButton1Click:Connect(function()
-    espEnabled = not espEnabled
-    EspBtn.Text = espEnabled and "ESP: ON" or "ESP: OFF"
-    EspBtn.BackgroundColor3 = espEnabled and Color3.fromRGB(60, 255, 100) or Color3.fromRGB(171, 60, 255)
-    
-    if espEnabled then
-        task.spawn(function()
-            while espEnabled do
-                applyESP()
-                task.wait(0.3)
-            end
-        end)
-    else
-        for _, v in pairs(Players:GetPlayers()) do
-            if v.Character and v.Character:FindFirstChild("MM2_ESP") then
-                v.Character.MM2_ESP:Destroy()
-            end
-        end
-    end
-end)
-
--- 3. 벽 관통 사일런트 에임 (Silent Aim + Wallbang)
-local function getMurderer()
-    for _, v in pairs(Players:GetPlayers()) do
-        if v.Character and v.Character:FindFirstChild("MM2_ESP") then
-            -- ESP가 빨간색으로 표기한 살인자 타겟팅
-            if v.Character.MM2_ESP.FillColor == Color3.fromRGB(255, 0, 0) then
-                return v.Character:FindFirstChild("HumanoidRootPart")
-            end
-        end
-    end
-    return nil
-end
+local wallbangEnabled = true -- 벽 관통 활성화
 
 local oldNamecall
 oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
     local args = {...}
 
-    if silentAimEnabled and (method == "Raycast" or method == "FindPartOnRay") then
-        local target = getMurderer()
-        if target then
-            -- 벽을 무시하고 살인자의 위치로 탄환 전달
-            return target.Position
-        else
-            -- 살인자가 없으면 맵 아주 먼 곳으로 쏴서 자살 방지
-            return Vector3.new(0, -1000, 0)
+    if not checkcaller() and silentAimEnabled then
+        -- 라이벌은 주로 'Fire' 이벤트나 특정 Raycast를 사용함
+        if method == "Raycast" or method == "FindPartOnRay" then
+            local target = getTarget() -- 적을 찾는 함수 (ESP 기반)
+            
+            if target then
+                -- [벽 관통 로직]
+                -- RaycastParams를 변조하여 벽(Obstacles)을 무시 리스트에 추가함
+                if wallbangEnabled and args[3] and typeof(args[3]) == "RaycastParams" then
+                    args[3].FilterDescendantsInstances = {game.Workspace.Map} -- 맵 구조물 무시
+                    args[3].FilterType = Enum.RaycastFilterType.Exclude
+                end
+                
+                return target.Position, target
+            end
         end
     end
     return oldNamecall(self, ...)
-end)
-
-AimBtn.MouseButton1Click:Connect(function()
-    silentAimEnabled = not silentAimEnabled
-    AimBtn.Text = silentAimEnabled and "Silent Aim: ON" or "Silent Aim: OFF"
-    AimBtn.BackgroundColor3 = silentAimEnabled and Color3.fromRGB(60, 255, 100) or Color3.fromRGB(255, 80, 0)
 end)
 
