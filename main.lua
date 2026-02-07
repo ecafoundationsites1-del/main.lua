@@ -1,11 +1,10 @@
 -- 서비스 로드
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local lp = Players.LocalPlayer
 
--- UI 생성 (ScreenGui)
+-- UI 생성
 local ScreenGui = Instance.new("ScreenGui", gethui() or game:GetService("CoreGui"))
-ScreenGui.Name = "ECAhack_Hub_Final"
+ScreenGui.Name = "ECAhack_Hub_V3"
 
 -- [메인 프레임]
 local MainFrame = Instance.new("Frame", ScreenGui)
@@ -15,7 +14,7 @@ MainFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 MainFrame.BorderSizePixel = 2
 MainFrame.BorderColor3 = Color3.new(1, 1, 1)
 
--- [상단 바]
+-- [상단 헤더 영역]
 local Header = Instance.new("Frame", MainFrame)
 Header.Size = UDim2.new(1, 0, 0, 80)
 Header.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -26,27 +25,25 @@ HeaderLine.Size = UDim2.new(1, 0, 0, 2)
 HeaderLine.Position = UDim2.new(0, 0, 1, 0)
 HeaderLine.BackgroundColor3 = Color3.new(1, 1, 1)
 
--- 프로필 이미지 (원형)
-local ProfileImg = Instance.new("ImageLabel", Header)
-ProfileImg.Size = UDim2.new(0, 60, 0, 60)
-ProfileImg.Position = UDim2.new(0, 15, 0.5, -30)
-ProfileImg.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
-ProfileImg.Image = Players:GetUserThumbnailAsync(lp.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
-local ProfileCorner = Instance.new("UICorner", ProfileImg)
-ProfileCorner.CornerRadius = UDim.new(1, 0)
+-- 상단 프로필 (이미지 일치)
+local ProfileImgTop = Instance.new("ImageLabel", Header)
+ProfileImgTop.Size = UDim2.new(0, 60, 0, 60)
+ProfileImgTop.Position = UDim2.new(0, 15, 0.5, -30)
+ProfileImgTop.Image = Players:GetUserThumbnailAsync(lp.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
+Instance.new("UICorner", ProfileImgTop).CornerRadius = UDim.new(1, 0)
 
--- 플레이어 정보 텍스트
-local PlayerInfoTxt = Instance.new("TextLabel", Header)
-PlayerInfoTxt.Size = UDim2.new(0, 250, 1, 0)
-PlayerInfoTxt.Position = UDim2.new(0, 85, 0, 0)
-PlayerInfoTxt.BackgroundTransparency = 1
-PlayerInfoTxt.Text = "Nickname: (" .. lp.Name .. ")\n계정생성일자: (" .. lp.AccountAge .. " days)"
-PlayerInfoTxt.TextColor3 = Color3.new(1, 1, 1)
-PlayerInfoTxt.TextXAlignment = Enum.TextXAlignment.Left
-PlayerInfoTxt.Font = Enum.Font.SourceSansBold
-PlayerInfoTxt.TextSize = 17
+-- 상단 정보 (닉네임 괄호 및 날짜)
+local TopInfo = Instance.new("TextLabel", Header)
+TopInfo.Size = UDim2.new(0, 250, 1, 0)
+TopInfo.Position = UDim2.new(0, 85, 0, 0)
+TopInfo.BackgroundTransparency = 1
+TopInfo.Text = "Nickname: (" .. lp.Name .. ")\n계정생성일자: (" .. lp.AccountAge .. "일)"
+TopInfo.TextColor3 = Color3.new(1, 1, 1)
+TopInfo.TextXAlignment = Enum.TextXAlignment.Left
+TopInfo.Font = Enum.Font.SourceSansBold
+TopInfo.TextSize = 17
 
--- 허브 타이틀
+-- 허브 제목
 local Title = Instance.new("TextLabel", Header)
 Title.Size = UDim2.new(0, 200, 1, 0)
 Title.Position = UDim2.new(1, -210, 0, 0)
@@ -57,34 +54,79 @@ Title.TextSize = 28
 Title.Font = Enum.Font.SourceSansBold
 Title.TextXAlignment = Enum.TextXAlignment.Right
 
--- [사이드바]
+-- [사이드바 영역]
 local SideBar = Instance.new("Frame", MainFrame)
 SideBar.Size = UDim2.new(0, 160, 1, -82)
 SideBar.Position = UDim2.new(0, 0, 0, 82)
 SideBar.BackgroundColor3 = Color3.new(0, 0, 0)
-SideBar.BorderSizePixel = 0
 
 local SideLine = Instance.new("Frame", SideBar)
 SideLine.Size = UDim2.new(0, 2, 1, 0)
 SideLine.Position = UDim2.new(1, 0, 0, 0)
 SideLine.BackgroundColor3 = Color3.new(1, 1, 1)
 
--- [우측 메인 컨텐츠 영역]
-local ContentFrame = Instance.new("Frame", MainFrame)
-ContentFrame.Size = UDim2.new(1, -162, 1, -82)
-ContentFrame.Position = UDim2.new(0, 162, 0, 82)
-ContentFrame.BackgroundTransparency = 1
+-- [우측 컨텐츠 영역 (페이지 전환용 컨테이너)]
+local PageContainer = Instance.new("Frame", MainFrame)
+PageContainer.Size = UDim2.new(1, -162, 1, -82)
+PageContainer.Position = UDim2.new(0, 162, 0, 82)
+PageContainer.BackgroundTransparency = 1
 
-local CenterMsg = Instance.new("TextLabel", ContentFrame)
-CenterMsg.Size = UDim2.new(1, 0, 1, 0)
-CenterMsg.BackgroundTransparency = 1
-CenterMsg.Text = "It has not been\ndeveloped! :("
-CenterMsg.TextColor3 = Color3.new(1, 1, 1)
-CenterMsg.TextSize = 45
-CenterMsg.Font = Enum.Font.SourceSansBold
-CenterMsg.Visible = false
+-------------------------------------------------------
+-- 페이지 1: 플레이어 정보 (디자인 반영)
+local PagePlayer = Instance.new("Frame", PageContainer)
+PagePlayer.Size = UDim2.new(1, 0, 1, 0)
+PagePlayer.BackgroundTransparency = 1
+PagePlayer.Visible = true -- 기본 페이지
 
---- 버튼 생성 함수 ---
+local LargeProfile = Instance.new("ImageLabel", PagePlayer)
+LargeProfile.Size = UDim2.new(0, 120, 0, 120)
+LargeProfile.Position = UDim2.new(0.5, -60, 0.1, 0)
+LargeProfile.Image = Players:GetUserThumbnailAsync(lp.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+LargeProfile.BackgroundColor3 = Color3.new(0, 0, 0)
+LargeProfile.BorderColor3 = Color3.new(1, 1, 1)
+LargeProfile.BorderSizePixel = 2
+
+local PlayerDetails = Instance.new("TextLabel", PagePlayer)
+PlayerDetails.Size = UDim2.new(1, 0, 0, 60)
+PlayerDetails.Position = UDim2.new(0, 0, 0.65, 0)
+PlayerDetails.BackgroundTransparency = 1
+PlayerDetails.Text = "DISPLAY: " .. lp.DisplayName .. "\nUSER ID: " .. lp.UserId
+PlayerDetails.TextColor3 = Color3.new(1, 1, 1)
+PlayerDetails.Font = Enum.Font.SourceSansBold
+PlayerDetails.TextSize = 20
+
+-- 페이지 2: ESP 설정 창
+local PageESP = Instance.new("Frame", PageContainer)
+PageESP.Size = UDim2.new(1, 0, 1, 0)
+PageESP.BackgroundTransparency = 1
+PageESP.Visible = false
+
+local EspToggle = Instance.new("TextButton", PageESP)
+EspToggle.Size = UDim2.new(0, 180, 0, 50)
+EspToggle.Position = UDim2.new(0.5, -90, 0.4, -25)
+EspToggle.BackgroundColor3 = Color3.new(0, 0, 0)
+EspToggle.BorderColor3 = Color3.new(1, 1, 1)
+EspToggle.Text = "ESP: OFF"
+EspToggle.TextColor3 = Color3.new(1, 1, 1)
+EspToggle.Font = Enum.Font.SourceSansBold
+EspToggle.TextSize = 22
+
+-- 페이지 3: 미구현 안내 창
+local PageNotDev = Instance.new("Frame", PageContainer)
+PageNotDev.Size = UDim2.new(1, 0, 1, 0)
+PageNotDev.BackgroundTransparency = 1
+PageNotDev.Visible = false
+
+local NotDevMsg = Instance.new("TextLabel", PageNotDev)
+NotDevMsg.Size = UDim2.new(1, 0, 1, 0)
+NotDevMsg.BackgroundTransparency = 1
+NotDevMsg.Text = "It has not been\ndeveloped! :("
+NotDevMsg.TextColor3 = Color3.new(1, 1, 1)
+NotDevMsg.TextSize = 45
+NotDevMsg.Font = Enum.Font.SourceSansBold
+-------------------------------------------------------
+
+-- 사이드바 버튼 생성
 local function createMenuBtn(name, pos)
     local btn = Instance.new("TextButton", SideBar)
     btn.Size = UDim2.new(0, 140, 0, 35)
@@ -99,113 +141,73 @@ local function createMenuBtn(name, pos)
     return btn
 end
 
-local PlayerInfoBtn = createMenuBtn("☰ 플레이어 정보", 15)
-local EspBtn = createMenuBtn("👁 ESP(TEAMS)", 60)
-local WallBtn = createMenuBtn("🧱 wall hgole gun", 105)
+local BtnInfo = createMenuBtn("☰ 플레이어 정보", 15)
+local BtnEsp = createMenuBtn("👁 ESP(TEAMS)", 60)
+local BtnWall = createMenuBtn("🧱 wall hgole gun", 105)
 
--- 하단 고정 텍스트
-local FooterTxt = Instance.new("TextLabel", SideBar)
-FooterTxt.Size = UDim2.new(1, 0, 0, 80)
-FooterTxt.Position = UDim2.new(0, 0, 1, -80)
-FooterTxt.BackgroundTransparency = 1
-FooterTxt.Text = "The button has\nnot been\ndeveloped.\n:("
-FooterTxt.TextColor3 = Color3.new(1, 1, 1)
-FooterTxt.TextSize = 14
-FooterTxt.Font = Enum.Font.SourceSans
+-- 사이드바 하단 안내 텍스트
+local Footer = Instance.new("TextLabel", SideBar)
+Footer.Size = UDim2.new(1, 0, 0, 80)
+Footer.Position = UDim2.new(0, 0, 1, -80)
+Footer.BackgroundTransparency = 1
+Footer.Text = "The button has\nnot been\ndeveloped.\n:("
+Footer.TextColor3 = Color3.new(1, 1, 1)
+Footer.TextSize = 13
 
---- 기능 구현부 ---
+-- [페이지 전환 함수]
+local function showPage(page)
+    PagePlayer.Visible = false
+    PageESP.Visible = false
+    PageNotDev.Visible = false
+    page.Visible = true
+end
 
-local espActive = false
+BtnInfo.MouseButton1Click:Connect(function() showPage(PagePlayer) end)
+BtnEsp.MouseButton1Click:Connect(function() showPage(PageESP) end)
+BtnWall.MouseButton1Click:Connect(function() showPage(PageNotDev) end)
 
--- 1. MM2 ESP 로직
+-- [ESP 기능 구현]
+local espEnabled = false
 local function updateESP()
     for _, v in pairs(Players:GetPlayers()) do
-        if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+        if v ~= lp and v.Character then
             local char = v.Character
-            local backpack = v:FindFirstChild("Backpack")
-            local color = Color3.fromRGB(0, 255, 0) -- 기본 시민 (초록)
-
-            local knifeNames = {"Knife", "Slasher", "Saw", "Blade", "칼"}
-            local gunNames = {"Gun", "Revolver", "Luger", "Sheriff", "총"}
-
-            local hasKnife = false
-            local hasGun = false
-
-            for _, n in pairs(knifeNames) do if char:FindFirstChild(n) or (backpack and backpack:FindFirstChild(n)) then hasKnife = true break end end
-            for _, n in pairs(gunNames) do if char:FindFirstChild(n) or (backpack and backpack:FindFirstChild(n)) then hasGun = true break end end
-
-            if hasKnife then color = Color3.fromRGB(255, 0, 0) -- 머더
-            elseif hasGun then color = Color3.fromRGB(0, 150, 255) -- 보안관
-            end
-
-            local high = char:FindFirstChild("ECA_ESP")
-            if not high then
-                high = Instance.new("Highlight")
-                high.Name = "ECA_ESP"
-                high.Parent = char
-            end
-            high.FillColor = color
-            high.OutlineColor = Color3.new(1, 1, 1)
-            high.Enabled = espActive
+            local high = char:FindFirstChild("ECA_Highlight") or Instance.new("Highlight", char)
+            high.Name = "ECA_Highlight"
+            
+            -- MM2 역할 감지
+            local isM = char:FindFirstChild("Knife") or (v.Backpack:FindFirstChild("Knife"))
+            local isS = char:FindFirstChild("Gun") or (v.Backpack:FindFirstChild("Gun"))
+            
+            high.FillColor = isM and Color3.new(1,0,0) or (isS and Color3.new(0,0.5,1) or Color3.new(0,1,0))
+            high.Enabled = espEnabled
         end
     end
 end
 
--- 2. 버튼 클릭 이벤트
-EspBtn.MouseButton1Click:Connect(function()
-    espActive = not espActive
-    CenterMsg.Visible = false
-    if espActive then
-        EspBtn.BackgroundColor3 = Color3.new(1, 1, 1)
-        EspBtn.TextColor3 = Color3.new(0, 0, 0)
-        task.spawn(function()
-            while espActive do
-                updateESP()
-                task.wait(0.5)
-            end
-        end)
-    else
-        EspBtn.BackgroundColor3 = Color3.new(0, 0, 0)
-        EspBtn.TextColor3 = Color3.new(1, 1, 1)
-        -- ESP 끄기
-        for _, p in pairs(Players:GetPlayers()) do
-            if p.Character and p.Character:FindFirstChild("ECA_ESP") then
-                p.Character.ECA_ESP.Enabled = false
-            end
-        end
+EspToggle.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    EspToggle.Text = espEnabled and "ESP: ON" or "ESP: OFF"
+    EspToggle.BackgroundColor3 = espEnabled and Color3.new(1,1,1) or Color3.new(0,0,0)
+    EspToggle.TextColor3 = espEnabled and Color3.new(0,0,0) or Color3.new(1,1,1)
+    
+    task.spawn(function()
+        while espEnabled do updateESP() task.wait(0.5) end
+    end)
+end)
+
+-- 드래그 기능 (모바일/PC)
+local dragging, dragStart, startPos
+MainFrame.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        dragging = true dragStart = i.Position startPos = MainFrame.Position
     end
 end)
-
-WallBtn.MouseButton1Click:Connect(function()
-    CenterMsg.Visible = true
-end)
-
-PlayerInfoBtn.MouseButton1Click:Connect(function()
-    CenterMsg.Visible = true
-end)
-
--- 3. 드래그 기능 (모바일 대응)
-local UserInputService = game:GetService("UserInputService")
-local dragging, dragInput, dragStart, startPos
-
-MainFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = MainFrame.Position
-    end
-end)
-
-MainFrame.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - dragStart
+game:GetService("UserInputService").InputChanged:Connect(function(i)
+    if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+        local delta = i.Position - dragStart
         MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
-    end
-end)
+game:GetService("UserInputService").InputEnded:Connect(function() dragging = false end)
 
