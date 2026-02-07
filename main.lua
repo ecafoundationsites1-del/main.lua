@@ -1,169 +1,119 @@
--- [[ 만우절 기념: 라이벌 개발자용 혼돈의 에디션 ]] --
-
-local Player = game.Players.LocalPlayer
-local Character = Player.Character or Player.CharacterAdded:Wait()
+-- [[ 서비스 선언 ]]
+local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game.GetService("UserInputService")
-local TweenService = game.GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
--- [ 설정 및 변수 ]
-local CORRECT_KEY = "DORS123"
-local KEY_LINK = "https://github.com/YourName/YourRepo" -- 여기에 본인의 깃허브 주소 입력
-local aimModeEnabled = false
-local wallHackEnabled = false
+local Player = Players.LocalPlayer
 
--- [ UI 생성 ]
-local MainGui = Instance.new("ScreenGui", Player.PlayerGui)
-MainGui.Name = "AprilFoolsMenu"
+-- [[ 기존 UI 제거 (중복 실행 방지) ]]
+local oldGui = Player.PlayerGui:FindFirstChild("OptimizedGui") or (game:GetService("CoreGui"):FindFirstChild("OptimizedGui"))
+if oldGui then oldGui:Destroy() end
 
--- 키 입력 창
-local KeyFrame = Instance.new("Frame", MainGui)
-KeyFrame.Size = UDim2.new(0, 300, 0, 220)
-KeyFrame.Position = UDim2.new(0.5, -150, 0.5, -110)
-KeyFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-KeyFrame.BorderSizePixel = 0
+-- [[ 설정 ]]
+local CONFIG = {
+    KEY = "DORS123",
+    TITLE = "DELTA PREMIUM V2"
+}
 
-local UICorner = Instance.new("UICorner", KeyFrame)
-UICorner.CornerRadius = ToolHeight and UDim.new(0, 10) or UDim.new(0, 10)
+-- [[ UI 생성 - Delta 최적화 ]]
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "OptimizedGui"
+ScreenGui.ResetOnSpawn = false -- 캐릭터 죽어도 유지
+-- Delta에서는 PlayerGui가 가장 확실합니다.
+ScreenGui.Parent = Player:WaitForChild("PlayerGui")
 
-local Title = Instance.new("TextLabel", KeyFrame)
-Title.Text = "APRIL FOOL SYSTEM"
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 260, 0, 300)
+MainFrame.Position = UDim2.new(0.5, -130, 0.5, -150)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true -- Delta에서는 기본 Draggable이 먹히는 경우가 많음
+
+local Corner = Instance.new("UICorner", MainFrame)
+Corner.CornerRadius = UDim.new(0, 10)
+
+-- 타이틀
+local Title = Instance.new("TextLabel", MainFrame)
 Title.Size = UDim2.new(1, 0, 0, 40)
-Title.TextColor3 = Color3.new(1, 1, 1)
-Title.BackgroundTransparency = 1
+Title.Text = CONFIG.TITLE
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 10)
 
-local KeyInput = Instance.new("TextBox", KeyFrame)
+-- [ 로그인 섹션 ]
+local LoginSection = Instance.new("Frame", MainFrame)
+LoginSection.Size = UDim2.new(1, -20, 1, -60)
+LoginSection.Position = UDim2.new(0, 10, 0, 50)
+LoginSection.BackgroundTransparency = 1
+
+local KeyInput = Instance.new("TextBox", LoginSection)
+KeyInput.Size = UDim2.new(1, 0, 0, 40)
+KeyInput.Position = UDim2.new(0, 0, 0.2, 0)
 KeyInput.PlaceholderText = "인증키 입력..."
-KeyInput.Size = UDim2.new(0.8, 0, 0, 40)
-KeyInput.Position = UDim2.new(0.1, 0, 0.25, 0)
-KeyInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+KeyInput.Text = ""
+KeyInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 KeyInput.TextColor3 = Color3.new(1, 1, 1)
 
-local GetKeyBtn = Instance.new("TextButton", KeyFrame)
-GetKeyBtn.Text = "키 받기 (링크 복사)"
-GetKeyBtn.Size = UDim2.new(0.8, 0, 0, 35)
-GetKeyBtn.Position = UDim2.new(0.1, 0, 0.5, 0)
-GetKeyBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
-GetKeyBtn.TextColor3 = Color3.new(1, 1, 1)
+local LoginBtn = Instance.new("TextButton", LoginSection)
+LoginBtn.Size = UDim2.new(1, 0, 0, 40)
+LoginBtn.Position = UDim2.new(0, 0, 0.5, 0)
+LoginBtn.Text = "로그인 (DORS123)"
+LoginBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
+LoginBtn.TextColor3 = Color3.new(1, 1, 1)
 
-local SubmitBtn = Instance.new("TextButton", KeyFrame)
-SubmitBtn.Text = "인증하기"
-SubmitBtn.Size = UDim2.new(0.8, 0, 0, 35)
-SubmitBtn.Position = UDim2.new(0.1, 0, 0.75, 0)
-SubmitBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
-SubmitBtn.TextColor3 = Color3.new(1, 1, 1)
+-- [ 기능 섹션 ]
+local FeatureSection = Instance.new("Frame", MainFrame)
+FeatureSection.Size = UDim2.new(1, -20, 1, -60)
+FeatureSection.Position = UDim2.new(0, 10, 0, 50)
+FeatureSection.BackgroundTransparency = 1
+FeatureSection.Visible = false
 
--- 기능 제어 창 (인증 후 표시)
-local ToolFrame = Instance.new("Frame", MainGui)
-ToolFrame.Visible = false
-ToolFrame.Size = UDim2.new(0, 220, 0, 130)
-ToolFrame.Position = UDim2.new(0, 20, 0.5, -65)
-ToolFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Instance.new("UICorner", ToolFrame).CornerRadius = UDim.new(0, 10)
+local aimEnabled = false
+local AimBtn = Instance.new("TextButton", FeatureSection)
+AimBtn.Size = UDim2.new(1, 0, 0, 45)
+AimBtn.Text = "Aimbot: OFF"
+AimBtn.BackgroundColor3 = Color3.fromRGB(150, 50, 50)
+AimBtn.TextColor3 = Color3.new(1, 1, 1)
 
-local AimBtn = Instance.new("TextButton", ToolFrame)
-AimBtn.Text = "에임 모드: OFF"
-AimBtn.Size = UDim2.new(0.9, 0, 0, 40)
-AimBtn.Position = UDim2.new(0.05, 0, 0.15, 0)
-AimBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-
-local WallBtn = Instance.new("TextButton", ToolFrame)
-WallBtn.Text = "총알 뚫기: OFF"
-WallBtn.Size = UDim2.new(0.9, 0, 0, 40)
-WallBtn.Position = UDim2.new(0.05, 0, 0.55, 0)
-WallBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-
--- [ 기능 로직 ]
-
--- 가까운 적 찾기
-local function getClosestPlayer()
-    local closest = nil
-    local dist = math.huge
-    for _, v in pairs(game.Players:GetPlayers()) do
-        if v ~= Player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-            local d = (v.Character.HumanoidRootPart.Position - Player.Character.HumanoidRootPart.Position).Magnitude
-            if d < dist then
-                dist = d
-                closest = v.Character
-            end
-        end
-    end
-    return closest
-end
-
--- 에임 꺾기 (RenderStepped)
-RunService.RenderStepped:Connect(function()
-    if aimModeEnabled and Player.Character and Player.Character:FindFirstChild("UpperTorso") then
-        local targetChar = getClosestPlayer()
-        if targetChar then
-            local waist = Player.Character.UpperTorso:FindFirstChild("Waist")
-            if waist then
-                local lookVector = (targetChar.HumanoidRootPart.Position - Player.Character.Head.Position).Unit
-                waist.C0 = waist.C0:Lerp(CFrame.new(waist.C0.Position, lookVector), 0.15)
-            end
-        end
-    end
-end)
-
--- 총알 발사 (마우스 클릭 시 유도탄 생성 시뮬레이션)
-UserInputService.InputBegan:Connect(function(input, processed)
-    if processed then return end
-    if input.UserInputType == Enum.UserInputType.MouseButton1 and wallHackEnabled then
-        local target = getClosestPlayer()
-        if target then
-            -- [베지에 곡선 총알 로직]
-            local bullet = Instance.new("Part", workspace)
-            bullet.Size = Vector3.new(0.5, 0.5, 2)
-            bullet.Color = Color3.new(1, 0, 0)
-            bullet.CanCollide = false
-            bullet.Anchored = true
-            
-            local startPos = Player.Character.Head.Position
-            local midPoint = startPos + (target.HumanoidRootPart.Position - startPos) / 2 + Vector3.new(0, 10, 0)
-            
-            task.spawn(function()
-                for t = 0, 1, 0.05 do
-                    local p2 = target.HumanoidRootPart.Position
-                    local nextPos = (1-t)^2 * startPos + 2*(1-t)*t * midPoint + t^2 * p2
-                    bullet.CFrame = CFrame.lookAt(nextPos, p2)
-                    task.wait(0.02)
-                end
-                bullet:Destroy()
-            end)
-        end
-    end
-end)
-
--- [ 버튼 이벤트 ]
-GetKeyBtn.MouseButton1Click:Connect(function()
-    if setclipboard then
-        setclipboard(KEY_LINK)
-        GetKeyBtn.Text = "링크 복사 완료!"
+-- [[ 로직 ]]
+LoginBtn.MouseButton1Click:Connect(function()
+    if KeyInput.Text == CONFIG.KEY then
+        LoginSection.Visible = false
+        FeatureSection.Visible = true
+        Title.Text = "환영합니다, " .. Player.Name
     else
-        print("링크: " .. KEY_LINK)
-    end
-end)
-
-SubmitBtn.MouseButton1Click:Connect(function()
-    if KeyInput.Text == CORRECT_KEY then
-        KeyFrame.Visible = false
-        ToolFrame.Visible = true
-    else
-        KeyInput.Text = ""
         KeyInput.PlaceholderText = "잘못된 키!"
+        KeyInput.Text = ""
     end
 end)
 
 AimBtn.MouseButton1Click:Connect(function()
-    aimModeEnabled = not aimModeEnabled
-    AimBtn.Text = "에임 모드: " .. (aimModeEnabled and "ON" or "OFF")
-    AimBtn.BackgroundColor3 = aimModeEnabled and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(180, 0, 0)
+    aimEnabled = not aimEnabled
+    AimBtn.Text = "Aimbot: " .. (aimEnabled and "ON" or "OFF")
+    AimBtn.BackgroundColor3 = aimEnabled and Color3.fromRGB(50, 150, 50) or Color3.fromRGB(150, 50, 50)
 end)
 
-WallBtn.MouseButton1Click:Connect(function()
-    wallHackEnabled = not wallHackEnabled
-    WallBtn.Text = "총알 뚫기: " .. (wallHackEnabled and "ON" or "OFF")
-    WallBtn.BackgroundColor3 = wallHackEnabled and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(180, 0, 0)
+-- 에임봇 작동 (가장 가까운 사람 보기)
+RunService.RenderStepped:Connect(function()
+    if aimEnabled and Player.Character then
+        local closest = nil
+        local dist = 1000
+        for _, v in pairs(Players:GetPlayers()) do
+            if v ~= Player and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                local d = (v.Character.HumanoidRootPart.Position - Player.Character.HumanoidRootPart.Position).Magnitude
+                if d < dist then
+                    dist = d
+                    closest = v.Character
+                end
+            end
+        end
+        if closest then
+            workspace.CurrentCamera.CFrame = CFrame.lookAt(workspace.CurrentCamera.CFrame.Position, closest.HumanoidRootPart.Position)
+        end
+    end
 end)
 
