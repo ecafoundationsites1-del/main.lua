@@ -238,7 +238,7 @@ task.spawn(function()
                     end
                     if safe then
                         root.CFrame = coin.CFrame
-                        task.wait(0.15)
+                        task.wait(1)
                     end
                 end
             else
