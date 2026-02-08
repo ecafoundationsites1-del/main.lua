@@ -9,19 +9,19 @@ ScreenGui.Name = "ECA_Universal_Hub_V4"
 ScreenGui.ResetOnSpawn = false
 
 -------------------------------------------------------
--- [드래그 함수 수정본]
+-- [드래그 함수 - 완벽 버전]
 -------------------------------------------------------
 local function makeDraggable(obj)
     local dragging, dragInput, dragStart, startPos
     obj.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = obj.Position
         end
     end)
     obj.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
             dragInput = input
         end
     end)
@@ -32,7 +32,7 @@ local function makeDraggable(obj)
         end
     end)
     UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = false
         end
     end)
@@ -51,8 +51,8 @@ OpenBtn.Text = "ECA"
 OpenBtn.TextColor3 = Color3.new(1, 1, 1)
 OpenBtn.Font = Enum.Font.SourceSansBold
 OpenBtn.TextSize = 18
-OpenBtn.Visible = false -- 처음엔 안보임
-makeDraggable(OpenBtn)
+OpenBtn.Visible = false 
+makeDraggable(OpenBtn) -- 작은 버튼도 드래그 가능
 
 -------------------------------------------------------
 -- [1. 키 시스템]
@@ -63,7 +63,7 @@ KeyFrame.Position = UDim2.new(0.5, -225, 0.5, -130)
 KeyFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 KeyFrame.BorderSizePixel = 2
 KeyFrame.BorderColor3 = Color3.new(1, 1, 1)
-makeDraggable(KeyFrame)
+makeDraggable(KeyFrame) -- 키 프레임 드래그 가능
 
 local KeyInput = Instance.new("TextBox", KeyFrame)
 KeyInput.Size = UDim2.new(0, 320, 0, 50)
@@ -84,7 +84,7 @@ CheckKeyBtn.TextSize = 20
 CheckKeyBtn.Font = Enum.Font.SourceSansBold
 
 -------------------------------------------------------
--- [2. 메인 UI]
+-- [2. 메인 UI 및 사이드바]
 -------------------------------------------------------
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 550, 0, 320)
@@ -93,9 +93,9 @@ MainFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 MainFrame.BorderSizePixel = 2
 MainFrame.BorderColor3 = Color3.new(1, 1, 1)
 MainFrame.Visible = false
-makeDraggable(MainFrame)
+makeDraggable(MainFrame) -- 메인 프레임 드래그 가능
 
--- [닫기(X) 버튼 추가]
+-- 닫기(X) 버튼
 local CloseBtn = Instance.new("TextButton", MainFrame)
 CloseBtn.Size = UDim2.new(0, 30, 0, 30)
 CloseBtn.Position = UDim2.new(1, -35, 0, 5)
@@ -124,7 +124,7 @@ local Header = Instance.new("Frame", MainFrame)
 Header.Size = UDim2.new(1, 0, 0, 80)
 Header.BackgroundColor3 = Color3.new(0, 0, 0)
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(1, -40, 1, 0)
+Title.Size = UDim2.new(1, -50, 1, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "ECA Universal V4"
 Title.TextColor3 = Color3.new(1, 1, 1)
@@ -209,9 +209,10 @@ CoinFarmBtn.Font = Enum.Font.SourceSansBold
 CoinFarmBtn.TextSize = 20
 
 -------------------------------------------------------
--- [4. 핵심 기능 로직]
+-- [4. 핵심 기능 로직 전체 포함]
 -------------------------------------------------------
 
+-- 키 확인 로직
 CheckKeyBtn.MouseButton1Click:Connect(function() 
     if KeyInput.Text == "DORS123" then 
         KeyFrame:Destroy() 
@@ -219,13 +220,16 @@ CheckKeyBtn.MouseButton1Click:Connect(function()
     end 
 end)
 
--- [기능 1] 관통
+-- [기능 1] 관통 (Wallhole)
 local wallholeEnabled = false
 local function handleWallhole(obj)
     if wallholeEnabled and obj:IsA("BasePart") then
         local n = obj.Name
         if n:find("'s Bullet") or n:find("Bullet") or n:find("Projectile") or n == "KnifeProjectile" or n == "Handle" then
             obj.CanCollide = false
+            obj:GetPropertyChangedSignal("CanCollide"):Connect(function()
+                if wallholeEnabled then obj.CanCollide = false end
+            end)
         end
     end
 end
@@ -235,9 +239,10 @@ WallToggle.MouseButton1Click:Connect(function()
     WallToggle.Text = wallholeEnabled and "Wallhole: ON" or "Wallhole: OFF"
     WallToggle.BackgroundColor3 = wallholeEnabled and Color3.new(1,1,1) or Color3.new(0,0,0)
     WallToggle.TextColor3 = wallholeEnabled and Color3.new(0,0,0) or Color3.new(1,1,1)
+    if wallholeEnabled then for _, v in pairs(workspace:GetDescendants()) do handleWallhole(v) end end
 end)
 
--- [기능 2] ESP
+-- [기능 2] ESP (팀 구분)
 local espEnabled = false
 task.spawn(function()
     while true do
@@ -253,30 +258,35 @@ task.spawn(function()
                 end
             end
         else
-            for _, v in pairs(Players:GetPlayers()) do 
-                if v.Character and v.Character:FindFirstChild("ECA_H") then v.Character.ECA_H.Enabled = false end 
-            end
+            for _, v in pairs(Players:GetPlayers()) do if v.Character and v.Character:FindFirstChild("ECA_H") then v.Character.ECA_H.Enabled = false end end
         end
         task.wait(0.5)
     end
 end)
 EspToggle.MouseButton1Click:Connect(function() espEnabled = not espEnabled EspToggle.Text = espEnabled and "ESP: ON" or "ESP: OFF" end)
 
--- [기능 3] 오토 코인팜
+-- [기능 3] 오토 코인팜 (고속 TP)
 local coinFarmActive = false
+local farmDelay = 0.15 
+
 task.spawn(function()
     while true do
         if coinFarmActive and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+            local root = lp.Character.HumanoidRootPart
+            local found = false
             for _, v in pairs(workspace:GetDescendants()) do
                 if coinFarmActive and v.Name == "Coin" and v:IsA("BasePart") then
-                    lp.Character.HumanoidRootPart.CFrame = v.CFrame
-                    task.wait(0.15)
+                    found = true
+                    root.CFrame = v.CFrame
+                    task.wait(farmDelay)
                 end
             end
+            if not found then task.wait(1) end
         end
         task.wait(0.1)
     end
 end)
+
 CoinFarmBtn.MouseButton1Click:Connect(function()
     coinFarmActive = not coinFarmActive
     CoinFarmBtn.Text = coinFarmActive and "COIN FARM: ON" or "COIN FARM: OFF"
