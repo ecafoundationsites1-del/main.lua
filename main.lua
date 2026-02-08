@@ -9,7 +9,7 @@ ScreenGui.Name = "ECA_Universal_Hub_V4"
 ScreenGui.ResetOnSpawn = false
 
 -------------------------------------------------------
--- [드래그 함수 - 완벽 버전]
+-- [드래그 함수]
 -------------------------------------------------------
 local function makeDraggable(obj)
     local dragging, dragInput, dragStart, startPos
@@ -39,98 +39,57 @@ local function makeDraggable(obj)
 end
 
 -------------------------------------------------------
--- [최소화 버튼 (작은 버튼)]
+-- [최소화 및 메인 UI]
 -------------------------------------------------------
 local OpenBtn = Instance.new("TextButton", ScreenGui)
 OpenBtn.Size = UDim2.new(0, 50, 0, 50)
 OpenBtn.Position = UDim2.new(0, 20, 0.5, -25)
 OpenBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-OpenBtn.BorderSizePixel = 2
-OpenBtn.BorderColor3 = Color3.new(1, 1, 1)
 OpenBtn.Text = "ECA"
 OpenBtn.TextColor3 = Color3.new(1, 1, 1)
-OpenBtn.Font = Enum.Font.SourceSansBold
-OpenBtn.TextSize = 18
 OpenBtn.Visible = false 
-makeDraggable(OpenBtn) -- 작은 버튼도 드래그 가능
+makeDraggable(OpenBtn)
 
--------------------------------------------------------
--- [1. 키 시스템]
--------------------------------------------------------
 local KeyFrame = Instance.new("Frame", ScreenGui)
 KeyFrame.Size = UDim2.new(0, 450, 0, 260)
 KeyFrame.Position = UDim2.new(0.5, -225, 0.5, -130)
 KeyFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 KeyFrame.BorderSizePixel = 2
 KeyFrame.BorderColor3 = Color3.new(1, 1, 1)
-makeDraggable(KeyFrame) -- 키 프레임 드래그 가능
+makeDraggable(KeyFrame)
 
 local KeyInput = Instance.new("TextBox", KeyFrame)
 KeyInput.Size = UDim2.new(0, 320, 0, 50)
 KeyInput.Position = UDim2.new(0.5, -160, 0.4, 0)
-KeyInput.BackgroundColor3 = Color3.fromRGB(130, 130, 130)
 KeyInput.Text = "DORS123"
-KeyInput.TextColor3 = Color3.new(0, 0, 0)
-KeyInput.TextSize = 24
-KeyInput.Font = Enum.Font.SourceSansBold
 
 local CheckKeyBtn = Instance.new("TextButton", KeyFrame)
 CheckKeyBtn.Size = UDim2.new(0, 150, 0, 45)
 CheckKeyBtn.Position = UDim2.new(0.5, -75, 0.75, 0)
-CheckKeyBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
 CheckKeyBtn.Text = "확인"
-CheckKeyBtn.TextColor3 = Color3.new(1, 1, 1)
-CheckKeyBtn.TextSize = 20
-CheckKeyBtn.Font = Enum.Font.SourceSansBold
 
--------------------------------------------------------
--- [2. 메인 UI 및 사이드바]
--------------------------------------------------------
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 550, 0, 320)
 MainFrame.Position = UDim2.new(0.5, -275, 0.5, -160)
 MainFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-MainFrame.BorderSizePixel = 2
-MainFrame.BorderColor3 = Color3.new(1, 1, 1)
 MainFrame.Visible = false
-makeDraggable(MainFrame) -- 메인 프레임 드래그 가능
+makeDraggable(MainFrame)
 
--- 닫기(X) 버튼
 local CloseBtn = Instance.new("TextButton", MainFrame)
 CloseBtn.Size = UDim2.new(0, 30, 0, 30)
 CloseBtn.Position = UDim2.new(1, -35, 0, 5)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
 CloseBtn.Text = "X"
-CloseBtn.TextColor3 = Color3.new(1, 1, 1)
-CloseBtn.Font = Enum.Font.SourceSansBold
-CloseBtn.TextSize = 20
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
 
-CloseBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = false
-    OpenBtn.Visible = true
-end)
+CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false OpenBtn.Visible = true end)
+OpenBtn.MouseButton1Click:Connect(function() MainFrame.Visible = true OpenBtn.Visible = false end)
+CheckKeyBtn.MouseButton1Click:Connect(function() if KeyInput.Text == "DORS123" then KeyFrame:Destroy() MainFrame.Visible = true end end)
 
-OpenBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = true
-    OpenBtn.Visible = false
-end)
-
+-- 사이드바 및 페이지
 local SideBar = Instance.new("Frame", MainFrame)
 SideBar.Size = UDim2.new(0, 160, 1, -82)
 SideBar.Position = UDim2.new(0, 0, 0, 82)
 SideBar.BackgroundColor3 = Color3.new(0, 0, 0)
-
-local Header = Instance.new("Frame", MainFrame)
-Header.Size = UDim2.new(1, 0, 0, 80)
-Header.BackgroundColor3 = Color3.new(0, 0, 0)
-local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(1, -50, 1, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "ECA Universal V4"
-Title.TextColor3 = Color3.new(1, 1, 1)
-Title.TextSize = 24
-Title.Font = Enum.Font.SourceSansBold
-Title.TextXAlignment = Enum.TextXAlignment.Right
 
 local PageContainer = Instance.new("Frame", MainFrame)
 PageContainer.Size = UDim2.new(1, -162, 1, -82)
@@ -144,106 +103,82 @@ local Pages = {
     TP = Instance.new("Frame", PageContainer),
     AutoFarm = Instance.new("Frame", PageContainer)
 }
-
-for _, p in pairs(Pages) do
-    p.Size = UDim2.new(1, 0, 1, 0)
-    p.BackgroundTransparency = 1
-    p.Visible = false
-end
+for _, p in pairs(Pages) do p.Size = UDim2.new(1, 0, 1, 0) p.Visible = false p.BackgroundTransparency = 1 end
 Pages.Player.Visible = true
 
 local function createMenuBtn(name, pos, page)
     local btn = Instance.new("TextButton", SideBar)
     btn.Size = UDim2.new(0, 140, 0, 35)
     btn.Position = UDim2.new(0.5, -70, 0, pos)
-    btn.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
-    btn.TextColor3 = Color3.new(1, 1, 1)
     btn.Text = name
-    btn.Font = Enum.Font.SourceSansBold
-    btn.TextSize = 13
-    btn.BorderSizePixel = 1
-    btn.BorderColor3 = Color3.new(1, 1, 1)
-    btn.MouseButton1Click:Connect(function()
-        for _, p in pairs(Pages) do p.Visible = false end
-        page.Visible = true
-    end)
+    btn.MouseButton1Click:Connect(function() for _, p in pairs(Pages) do p.Visible = false end page.Visible = true end)
 end
-
-createMenuBtn("☰ 플레이어 정보", 10, Pages.Player)
-createMenuBtn("👁 ESP(TEAMS)", 50, Pages.ESP)
-createMenuBtn("🧱 Wallhole Gun", 90, Pages.Wallhole)
-createMenuBtn("🚀 Gun Teleport", 130, Pages.TP)
+createMenuBtn("☰ 플레이어", 10, Pages.Player)
+createMenuBtn("👁 ESP", 50, Pages.ESP)
+createMenuBtn("🧱 Wallhole", 90, Pages.Wallhole)
+createMenuBtn("🚀 Gun TP", 130, Pages.TP)
 createMenuBtn("🚜 Auto Farm", 170, Pages.AutoFarm)
 
--------------------------------------------------------
--- [3. 기능용 버튼 UI 생성]
--------------------------------------------------------
+-- 기능 버튼들
 local EspToggle = Instance.new("TextButton", Pages.ESP)
 EspToggle.Size = UDim2.new(0, 180, 0, 50)
 EspToggle.Position = UDim2.new(0.5, -90, 0.4, -25)
 EspToggle.Text = "ESP: OFF"
-EspToggle.BackgroundColor3 = Color3.new(0,0,0)
-EspToggle.TextColor3 = Color3.new(1,1,1)
 
 local WallToggle = Instance.new("TextButton", Pages.Wallhole)
 WallToggle.Size = UDim2.new(0, 180, 0, 50)
 WallToggle.Position = UDim2.new(0.5, -90, 0.4, -25)
 WallToggle.Text = "Wallhole: OFF"
-WallToggle.BackgroundColor3 = Color3.new(0,0,0)
-WallToggle.TextColor3 = Color3.new(1,1,1)
 
 local TpToggle = Instance.new("TextButton", Pages.TP)
 TpToggle.Size = UDim2.new(0, 200, 0, 60)
 TpToggle.Position = UDim2.new(0.5, -100, 0.4, -30)
 TpToggle.Text = "AUTO TP GUN: OFF"
-TpToggle.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
-TpToggle.TextColor3 = Color3.new(1,1,1)
 
 local CoinFarmBtn = Instance.new("TextButton", Pages.AutoFarm)
 CoinFarmBtn.Size = UDim2.new(0, 200, 0, 60)
 CoinFarmBtn.Position = UDim2.new(0.5, -100, 0.4, -30)
 CoinFarmBtn.Text = "COIN FARM: OFF"
-CoinFarmBtn.BackgroundColor3 = Color3.new(0,0,0)
-CoinFarmBtn.TextColor3 = Color3.new(1,1,1)
-CoinFarmBtn.Font = Enum.Font.SourceSansBold
-CoinFarmBtn.TextSize = 20
 
 -------------------------------------------------------
--- [4. 핵심 기능 로직 전체 포함]
+-- [핵심 로직 시스템]
 -------------------------------------------------------
-
--- 키 확인 로직
-CheckKeyBtn.MouseButton1Click:Connect(function() 
-    if KeyInput.Text == "DORS123" then 
-        KeyFrame:Destroy() 
-        MainFrame.Visible = true 
-    end 
-end)
-
--- [기능 1] 관통 (Wallhole)
+local coinFarmActive = false
+local tpActive = false
 local wallholeEnabled = false
-local function handleWallhole(obj)
-    if wallholeEnabled and obj:IsA("BasePart") then
-        local n = obj.Name
-        if n:find("'s Bullet") or n:find("Bullet") or n:find("Projectile") or n == "KnifeProjectile" or n == "Handle" then
-            obj.CanCollide = false
-            obj:GetPropertyChangedSignal("CanCollide"):Connect(function()
-                if wallholeEnabled then obj.CanCollide = false end
-            end)
+local espEnabled = false
+local safetyDistance = 10 
+local platform = nil
+
+-- 살인자 찾기 함수
+local function getMurderer()
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            if v.Character:FindFirstChild("Knife") or v.Backpack:FindFirstChild("Knife") then
+                return v.Character.HumanoidRootPart
+            end
+        end
+    end
+    return nil
+end
+
+-- 스카이 스폰 및 발판
+local function skySpawn()
+    if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+        lp.Character.HumanoidRootPart.CFrame = CFrame.new(0, 500, 0)
+        if not platform or not platform.Parent then
+            platform = Instance.new("Part")
+            platform.Size = Vector3.new(20, 1, 20)
+            platform.Position = Vector3.new(0, 495, 0)
+            platform.Anchored = true
+            platform.Transparency = 0.5
+            platform.BrickColor = BrickColor.new("Bright blue")
+            platform.Parent = workspace
         end
     end
 end
-workspace.DescendantAdded:Connect(handleWallhole)
-WallToggle.MouseButton1Click:Connect(function()
-    wallholeEnabled = not wallholeEnabled
-    WallToggle.Text = wallholeEnabled and "Wallhole: ON" or "Wallhole: OFF"
-    WallToggle.BackgroundColor3 = wallholeEnabled and Color3.new(1,1,1) or Color3.new(0,0,0)
-    WallToggle.TextColor3 = wallholeEnabled and Color3.new(0,0,0) or Color3.new(1,1,1)
-    if wallholeEnabled then for _, v in pairs(workspace:GetDescendants()) do handleWallhole(v) end end
-end)
 
--- [기능 2] ESP (팀 구분)
-local espEnabled = false
+-- [기능 1] ESP
 task.spawn(function()
     while true do
         if espEnabled then
@@ -252,8 +187,7 @@ task.spawn(function()
                     local h = v.Character:FindFirstChild("ECA_H") or Instance.new("Highlight", v.Character)
                     h.Name = "ECA_H"
                     local isM = v.Character:FindFirstChild("Knife") or v.Backpack:FindFirstChild("Knife")
-                    local isS = v.Character:FindFirstChild("Gun") or v.Backpack:FindFirstChild("Gun") or v.Character:FindFirstChild("Revolver")
-                    h.FillColor = isM and Color3.new(1,0,0) or (isS and Color3.new(0,0.5,1) or Color3.new(0,1,0))
+                    h.FillColor = isM and Color3.new(1,0,0) or Color3.new(0,1,0)
                     h.Enabled = true
                 end
             end
@@ -263,49 +197,84 @@ task.spawn(function()
         task.wait(0.5)
     end
 end)
-EspToggle.MouseButton1Click:Connect(function() espEnabled = not espEnabled EspToggle.Text = espEnabled and "ESP: ON" or "ESP: OFF" end)
 
--- [기능 3] 오토 코인팜 (고속 TP)
-local coinFarmActive = false
-local farmDelay = 0.15 
-
-task.spawn(function()
-    while true do
-        if coinFarmActive and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
-            local root = lp.Character.HumanoidRootPart
-            local found = false
-            for _, v in pairs(workspace:GetDescendants()) do
-                if coinFarmActive and v.Name == "Coin" and v:IsA("BasePart") then
-                    found = true
-                    root.CFrame = v.CFrame
-                    task.wait(farmDelay)
-                end
-            end
-            if not found then task.wait(1) end
+-- [기능 2] Wallhole
+workspace.DescendantAdded:Connect(function(obj)
+    if wallholeEnabled and obj:IsA("BasePart") then
+        if obj.Name:find("'s Bullet") or obj.Name == "KnifeProjectile" then
+            obj.CanCollide = false
         end
-        task.wait(0.1)
     end
 end)
 
-CoinFarmBtn.MouseButton1Click:Connect(function()
-    coinFarmActive = not coinFarmActive
-    CoinFarmBtn.Text = coinFarmActive and "COIN FARM: ON" or "COIN FARM: OFF"
-    CoinFarmBtn.BackgroundColor3 = coinFarmActive and Color3.new(0, 0.7, 0) or Color3.new(0,0,0)
-end)
-
--- [기능 4] 건 텔레포트
-local tpActive = false
+-- [기능 3] Gun Teleport (복구됨)
 workspace.DescendantAdded:Connect(function(obj)
-    if tpActive and (obj.Name == "GunDrop" or (obj.Name == "Handle" and obj.Parent.Name == "Gun")) then
+    if tpActive and (obj.Name == "GunDrop" or (obj.Name == "Handle" and obj.Parent and obj.Parent.Name == "Gun")) then
         task.wait(0.1)
         if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
             lp.Character.HumanoidRootPart.CFrame = obj:IsA("BasePart") and obj.CFrame or obj:GetModelCFrame()
         end
     end
 end)
+
+-- [기능 4] Auto Farm + Sky System
+task.spawn(function()
+    while true do
+        if coinFarmActive and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+            local root = lp.Character.HumanoidRootPart
+            local murdererRoot = getMurderer()
+            local coins = {}
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v.Name == "Coin" and v:IsA("BasePart") then table.insert(coins, v) end
+            end
+
+            if #coins > 0 then
+                if platform then platform:Destroy() platform = nil end
+                for _, coin in pairs(coins) do
+                    if not coinFarmActive then break end
+                    local safe = true
+                    if murdererRoot then
+                        if (coin.Position - murdererRoot.Position).Magnitude < safetyDistance then safe = false end
+                    end
+                    if safe then
+                        root.CFrame = coin.CFrame
+                        task.wait(0.15)
+                    end
+                end
+            else
+                skySpawn()
+            end
+        end
+        task.wait(0.1)
+    end
+end)
+
+-------------------------------------------------------
+-- [버튼 이벤트 연결]
+-------------------------------------------------------
+EspToggle.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    EspToggle.Text = espEnabled and "ESP: ON" or "ESP: OFF"
+end)
+
+WallToggle.MouseButton1Click:Connect(function()
+    wallholeEnabled = not wallholeEnabled
+    WallToggle.Text = wallholeEnabled and "Wallhole: ON" or "Wallhole: OFF"
+end)
+
 TpToggle.MouseButton1Click:Connect(function()
     tpActive = not tpActive
     TpToggle.Text = tpActive and "AUTO TP GUN: ON" or "AUTO TP GUN: OFF"
-    TpToggle.BackgroundColor3 = tpActive and Color3.new(0, 0.6, 0) or Color3.fromRGB(50, 0, 0)
+end)
+
+CoinFarmBtn.MouseButton1Click:Connect(function()
+    coinFarmActive = not coinFarmActive
+    CoinFarmBtn.Text = coinFarmActive and "COIN FARM: ON" or "COIN FARM: OFF"
+    if not coinFarmActive and platform then platform:Destroy() platform = nil end
+end)
+
+lp.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    if coinFarmActive then skySpawn() end
 end)
 
