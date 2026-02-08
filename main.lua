@@ -201,7 +201,7 @@ makeDraggable(MainFrame)
 
 -- 키 시스템 로직
 GetKeyBtn.MouseButton1Click:Connect(function()
-    local link = "https://link-target.net/3356742/3g1CM5ipo8co"
+    local link = "https://linkvertise.com/3356742/JaGxZW28teWg?o=sharing"
     if setclipboard then
         setclipboard(link)
         GetKeyBtn.Text = "복사 완료!"
