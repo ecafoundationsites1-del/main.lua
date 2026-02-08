@@ -5,10 +5,10 @@ local lp = Players.LocalPlayer
 
 -- UI 생성
 local ScreenGui = Instance.new("ScreenGui", gethui() or game:GetService("CoreGui"))
-ScreenGui.Name = "ECAhack_Hub_V3"
+ScreenGui.Name = "ECAhack_Hub_V3_Final"
 
 -------------------------------------------------------
--- [1. 키 시스템 프레임] (첨부 이미지 디자인)
+-- [1. 키 시스템 프레임]
 -------------------------------------------------------
 local KeyFrame = Instance.new("Frame", ScreenGui)
 KeyFrame.Size = UDim2.new(0, 450, 0, 260)
@@ -26,7 +26,6 @@ KeyTitle.TextSize = 28
 KeyTitle.Font = Enum.Font.SourceSansBold
 KeyTitle.TextXAlignment = Enum.TextXAlignment.Right
 
--- 회색 키 입력창
 local KeyInput = Instance.new("TextBox", KeyFrame)
 KeyInput.Size = UDim2.new(0, 320, 0, 50)
 KeyInput.Position = UDim2.new(0.5, -160, 0.4, 0)
@@ -36,7 +35,6 @@ KeyInput.TextColor3 = Color3.new(0, 0, 0)
 KeyInput.TextSize = 24
 KeyInput.Font = Enum.Font.SourceSansBold
 
--- 보라색 키받기 버튼
 local GetKeyBtn = Instance.new("TextButton", KeyFrame)
 GetKeyBtn.Size = UDim2.new(0, 150, 0, 45)
 GetKeyBtn.Position = UDim2.new(0.1, 0, 0.75, 0)
@@ -45,9 +43,7 @@ GetKeyBtn.Text = "키받기"
 GetKeyBtn.TextColor3 = Color3.new(1, 1, 1)
 GetKeyBtn.TextSize = 20
 GetKeyBtn.Font = Enum.Font.SourceSansBold
-GetKeyBtn.BorderSizePixel = 0
 
--- 연두색 확인 버튼
 local CheckKeyBtn = Instance.new("TextButton", KeyFrame)
 CheckKeyBtn.Size = UDim2.new(0, 150, 0, 45)
 CheckKeyBtn.Position = UDim2.new(0.55, 0, 0.75, 0)
@@ -56,10 +52,9 @@ CheckKeyBtn.Text = "확인"
 CheckKeyBtn.TextColor3 = Color3.new(1, 1, 1)
 CheckKeyBtn.TextSize = 20
 CheckKeyBtn.Font = Enum.Font.SourceSansBold
-CheckKeyBtn.BorderSizePixel = 0
 
 -------------------------------------------------------
--- [2. 메인 프레임] (초기 비활성)
+-- [2. 메인 프레임]
 -------------------------------------------------------
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 550, 0, 320)
@@ -69,7 +64,6 @@ MainFrame.BorderSizePixel = 2
 MainFrame.BorderColor3 = Color3.new(1, 1, 1)
 MainFrame.Visible = false
 
--- [상단 헤더 영역]
 local Header = Instance.new("Frame", MainFrame)
 Header.Size = UDim2.new(1, 0, 0, 80)
 Header.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -106,7 +100,6 @@ Title.TextSize = 28
 Title.Font = Enum.Font.SourceSansBold
 Title.TextXAlignment = Enum.TextXAlignment.Right
 
--- [사이드바 영역]
 local SideBar = Instance.new("Frame", MainFrame)
 SideBar.Size = UDim2.new(0, 160, 1, -82)
 SideBar.Position = UDim2.new(0, 0, 0, 82)
@@ -117,40 +110,37 @@ SideLine.Size = UDim2.new(0, 2, 1, 0)
 SideLine.Position = UDim2.new(1, 0, 0, 0)
 SideLine.BackgroundColor3 = Color3.new(1, 1, 1)
 
--- [페이지 컨테이너]
 local PageContainer = Instance.new("Frame", MainFrame)
 PageContainer.Size = UDim2.new(1, -162, 1, -82)
 PageContainer.Position = UDim2.new(0, 162, 0, 82)
 PageContainer.BackgroundTransparency = 1
 
--- 페이지 1: 플레이어 정보
+-- 페이지들 생성
 local PagePlayer = Instance.new("Frame", PageContainer)
 PagePlayer.Size = UDim2.new(1, 0, 1, 0)
 PagePlayer.BackgroundTransparency = 1
 PagePlayer.Visible = true
 
-local LargeProfile = Instance.new("ImageLabel", PagePlayer)
-LargeProfile.Size = UDim2.new(0, 120, 0, 120)
-LargeProfile.Position = UDim2.new(0.5, -60, 0.1, 0)
-LargeProfile.Image = Players:GetUserThumbnailAsync(lp.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
-LargeProfile.BorderSizePixel = 2
-LargeProfile.BorderColor3 = Color3.new(1, 1, 1)
-
-local PlayerDetails = Instance.new("TextLabel", PagePlayer)
-PlayerDetails.Size = UDim2.new(1, 0, 0, 60)
-PlayerDetails.Position = UDim2.new(0, 0, 0.65, 0)
-PlayerDetails.BackgroundTransparency = 1
-PlayerDetails.Text = "DISPLAY: " .. lp.DisplayName .. "\nUSER ID: " .. lp.UserId
-PlayerDetails.TextColor3 = Color3.new(1, 1, 1)
-PlayerDetails.Font = Enum.Font.SourceSansBold
-PlayerDetails.TextSize = 20
-
--- 페이지 2: ESP
 local PageESP = Instance.new("Frame", PageContainer)
 PageESP.Size = UDim2.new(1, 0, 1, 0)
 PageESP.BackgroundTransparency = 1
 PageESP.Visible = false
 
+local PageWallhole = Instance.new("Frame", PageContainer)
+PageWallhole.Size = UDim2.new(1, 0, 1, 0)
+PageWallhole.BackgroundTransparency = 1
+PageWallhole.Visible = false
+
+local PageTP = Instance.new("Frame", PageContainer) -- 텔레포트 전용 페이지
+PageTP.Size = UDim2.new(1, 0, 1, 0)
+PageTP.BackgroundTransparency = 1
+PageTP.Visible = false
+
+-------------------------------------------------------
+-- [기능용 UI 요소들]
+-------------------------------------------------------
+
+-- ESP 버튼
 local EspToggle = Instance.new("TextButton", PageESP)
 EspToggle.Size = UDim2.new(0, 180, 0, 50)
 EspToggle.Position = UDim2.new(0.5, -90, 0.4, -25)
@@ -161,25 +151,33 @@ EspToggle.TextColor3 = Color3.new(1, 1, 1)
 EspToggle.Font = Enum.Font.SourceSansBold
 EspToggle.TextSize = 22
 
--- 페이지 3: 미구현
-local PageNotDev = Instance.new("Frame", PageContainer)
-PageNotDev.Size = UDim2.new(1, 0, 1, 0)
-PageNotDev.BackgroundTransparency = 1
-PageNotDev.Visible = false
+-- 관통 버튼
+local WallToggle = Instance.new("TextButton", PageWallhole)
+WallToggle.Size = UDim2.new(0, 180, 0, 50)
+WallToggle.Position = UDim2.new(0.5, -90, 0.4, -25)
+WallToggle.BackgroundColor3 = Color3.new(0, 0, 0)
+WallToggle.BorderColor3 = Color3.new(1, 1, 1)
+WallToggle.Text = "Wallhole: OFF"
+WallToggle.TextColor3 = Color3.new(1, 1, 1)
+WallToggle.Font = Enum.Font.SourceSansBold
+WallToggle.TextSize = 22
 
-local NotDevMsg = Instance.new("TextLabel", PageNotDev)
-NotDevMsg.Size = UDim2.new(1, 0, 1, 0)
-NotDevMsg.BackgroundTransparency = 1
-NotDevMsg.Text = "It has not been\ndeveloped! :("
-NotDevMsg.TextColor3 = Color3.new(1, 1, 1)
-NotDevMsg.TextSize = 45
-NotDevMsg.Font = Enum.Font.SourceSansBold
+-- 텔레포트 버튼
+local TpToggle = Instance.new("TextButton", PageTP)
+TpToggle.Size = UDim2.new(0, 220, 0, 60)
+TpToggle.Position = UDim2.new(0.5, -110, 0.4, -30)
+TpToggle.BackgroundColor3 = Color3.new(0, 0, 0)
+TpToggle.BorderColor3 = Color3.fromRGB(255, 0, 0)
+TpToggle.Text = "AUTO TP GUN: OFF"
+TpToggle.TextColor3 = Color3.new(1, 1, 1)
+TpToggle.Font = Enum.Font.SourceSansBold
+TpToggle.TextSize = 20
 
 -------------------------------------------------------
 -- [3. 로직 및 이벤트]
 -------------------------------------------------------
 
--- 드래그 함수
+-- 드래그 기능
 local function makeDraggable(obj)
     local dragging, dragStart, startPos
     obj.InputBegan:Connect(function(i)
@@ -195,43 +193,19 @@ local function makeDraggable(obj)
     end)
     UserInputService.InputEnded:Connect(function() dragging = false end)
 end
-
 makeDraggable(KeyFrame)
 makeDraggable(MainFrame)
-
--- 키 시스템 로직
-GetKeyBtn.MouseButton1Click:Connect(function()
-    local link = "https://linkvertise.com/3356742/JaGxZW28teWg?o=sharing"
-    if setclipboard then
-        setclipboard(link)
-        GetKeyBtn.Text = "복사 완료!"
-        task.wait(2)
-        GetKeyBtn.Text = "키받기"
-    else
-        KeyInput.Text = "클립보드 지원불가"
-    end
-end)
-
-CheckKeyBtn.MouseButton1Click:Connect(function()
-    if KeyInput.Text == "DORS123" then
-        KeyFrame:Destroy()
-        MainFrame.Visible = true
-    else
-        KeyInput.Text = "틀렸습니다!"
-        task.wait(1)
-        KeyInput.Text = ""
-    end
-end)
 
 -- 페이지 전환
 local function showPage(page)
     PagePlayer.Visible = false
     PageESP.Visible = false
-    PageNotDev.Visible = false
+    PageWallhole.Visible = false
+    PageTP.Visible = false
     page.Visible = true
 end
 
--- 사이드바 버튼
+-- 사이드바 메뉴 버튼 생성
 local function createMenuBtn(name, pos, page)
     local btn = Instance.new("TextButton", SideBar)
     btn.Size = UDim2.new(0, 140, 0, 35)
@@ -244,14 +218,20 @@ local function createMenuBtn(name, pos, page)
     btn.BorderSizePixel = 1
     btn.BorderColor3 = Color3.new(1, 1, 1)
     btn.MouseButton1Click:Connect(function() showPage(page) end)
-    return btn
 end
 
 createMenuBtn("☰ 플레이어 정보", 15, PagePlayer)
 createMenuBtn("👁 ESP(TEAMS)", 60, PageESP)
-createMenuBtn("🧱 wall hgole gun", 105, PageNotDev)
+createMenuBtn("🧱 Wallhole Gun", 105, PageWallhole)
+createMenuBtn("🚀 Gun Teleport", 150, PageTP) -- 텔레포트 메뉴 추가
 
--- ESP 기능
+-- 키 시스템
+CheckKeyBtn.MouseButton1Click:Connect(function()
+    if KeyInput.Text == "DORS123" then KeyFrame:Destroy() MainFrame.Visible = true
+    else KeyInput.Text = "틀렸습니다!" task.wait(1) KeyInput.Text = "" end
+end)
+
+-- [기능1] ESP 로직 (보안관 정밀 감지 포함)
 local espEnabled = false
 local function updateESP()
     for _, v in pairs(Players:GetPlayers()) do
@@ -259,21 +239,55 @@ local function updateESP()
             local char = v.Character
             local high = char:FindFirstChild("ECA_Highlight") or Instance.new("Highlight", char)
             high.Name = "ECA_Highlight"
-            local isM = char:FindFirstChild("Knife") or (v.Backpack:FindFirstChild("Knife"))
-            local isS = char:FindFirstChild("Gun") or (v.Backpack:FindFirstChild("Gun"))
+            
+            local isM = char:FindFirstChild("Knife") or v.Backpack:FindFirstChild("Knife")
+            local isS = char:FindFirstChild("Gun") or v.Backpack:FindFirstChild("Gun") or char:FindFirstChild("Revolver") or v.Backpack:FindFirstChild("Revolver")
+            
             high.FillColor = isM and Color3.new(1,0,0) or (isS and Color3.new(0,0.5,1) or Color3.new(0,1,0))
             high.Enabled = espEnabled
         end
     end
 end
-
 EspToggle.MouseButton1Click:Connect(function()
     espEnabled = not espEnabled
     EspToggle.Text = espEnabled and "ESP: ON" or "ESP: OFF"
     EspToggle.BackgroundColor3 = espEnabled and Color3.new(1,1,1) or Color3.new(0,0,0)
     EspToggle.TextColor3 = espEnabled and Color3.new(0,0,0) or Color3.new(1,1,1)
-    task.spawn(function()
-        while espEnabled do updateESP() task.wait(0.5) end
-    end)
+    task.spawn(function() while espEnabled do updateESP() task.wait(0.5) end end)
 end)
+
+-- [기능2] Wallhole (관통)
+local wallholeEnabled = false
+local function applyWallhole(obj)
+    if obj:IsA("BasePart") and (obj.Name:find("Handle") or obj.Name:find("Projectile") or obj.Name:find("Bullet")) then
+        obj.CanCollide = false
+    end
+end
+WallToggle.MouseButton1Click:Connect(function()
+    wallholeEnabled = not wallholeEnabled
+    WallToggle.Text = wallholeEnabled and "Wallhole: ON" or "Wallhole: OFF"
+    WallToggle.BackgroundColor3 = wallholeEnabled and Color3.new(1,1,1) or Color3.new(0,0,0)
+    WallToggle.TextColor3 = wallholeEnabled and Color3.new(0,0,0) or Color3.new(1,1,1)
+end)
+workspace.DescendantAdded:Connect(function(obj) if wallholeEnabled then applyWallhole(obj) end end)
+
+-- [기능3] Auto TP Gun (자동 텔레포트)
+local autoTpEnabled = false
+local function checkAndTp(obj)
+    if not autoTpEnabled then return end
+    -- MM2 등에서 떨어진 총의 일반적인 이름들
+    if obj.Name == "GunDrop" or (obj.Name == "Handle" and obj.Parent:IsA("Model") and obj.Parent.Name == "Gun") then
+        task.wait(0.1)
+        if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+            lp.Character.HumanoidRootPart.CFrame = obj:IsA("Model") and obj:GetModelCFrame() or obj.CFrame
+        end
+    end
+end
+TpToggle.MouseButton1Click:Connect(function()
+    autoTpEnabled = not autoTpEnabled
+    TpToggle.Text = autoTpEnabled and "AUTO TP GUN: ON" or "AUTO TP GUN: OFF"
+    TpToggle.BackgroundColor3 = autoTpEnabled and Color3.new(1,0,0) or Color3.new(0,0,0)
+    TpToggle.TextColor3 = Color3.new(1,1,1)
+end)
+workspace.DescendantAdded:Connect(checkAndTp)
 
