@@ -6,6 +6,53 @@ local lp = Players.LocalPlayer
 -- UI 생성
 local ScreenGui = Instance.new("ScreenGui", gethui() or game:GetService("CoreGui"))
 ScreenGui.Name = "ECA_Universal_Hub_V4"
+ScreenGui.ResetOnSpawn = false
+
+-------------------------------------------------------
+-- [드래그 함수 수정본]
+-------------------------------------------------------
+local function makeDraggable(obj)
+    local dragging, dragInput, dragStart, startPos
+    obj.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = obj.Position
+        end
+    end)
+    obj.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            obj.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+end
+
+-------------------------------------------------------
+-- [최소화 버튼 (작은 버튼)]
+-------------------------------------------------------
+local OpenBtn = Instance.new("TextButton", ScreenGui)
+OpenBtn.Size = UDim2.new(0, 50, 0, 50)
+OpenBtn.Position = UDim2.new(0, 20, 0.5, -25)
+OpenBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+OpenBtn.BorderSizePixel = 2
+OpenBtn.BorderColor3 = Color3.new(1, 1, 1)
+OpenBtn.Text = "ECA"
+OpenBtn.TextColor3 = Color3.new(1, 1, 1)
+OpenBtn.Font = Enum.Font.SourceSansBold
+OpenBtn.TextSize = 18
+OpenBtn.Visible = false -- 처음엔 안보임
+makeDraggable(OpenBtn)
 
 -------------------------------------------------------
 -- [1. 키 시스템]
@@ -16,6 +63,7 @@ KeyFrame.Position = UDim2.new(0.5, -225, 0.5, -130)
 KeyFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 KeyFrame.BorderSizePixel = 2
 KeyFrame.BorderColor3 = Color3.new(1, 1, 1)
+makeDraggable(KeyFrame)
 
 local KeyInput = Instance.new("TextBox", KeyFrame)
 KeyInput.Size = UDim2.new(0, 320, 0, 50)
@@ -36,7 +84,7 @@ CheckKeyBtn.TextSize = 20
 CheckKeyBtn.Font = Enum.Font.SourceSansBold
 
 -------------------------------------------------------
--- [2. 메인 UI 및 사이드바 목록]
+-- [2. 메인 UI]
 -------------------------------------------------------
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 550, 0, 320)
@@ -45,6 +93,27 @@ MainFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 MainFrame.BorderSizePixel = 2
 MainFrame.BorderColor3 = Color3.new(1, 1, 1)
 MainFrame.Visible = false
+makeDraggable(MainFrame)
+
+-- [닫기(X) 버튼 추가]
+local CloseBtn = Instance.new("TextButton", MainFrame)
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -35, 0, 5)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.new(1, 1, 1)
+CloseBtn.Font = Enum.Font.SourceSansBold
+CloseBtn.TextSize = 20
+
+CloseBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    OpenBtn.Visible = true
+end)
+
+OpenBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = true
+    OpenBtn.Visible = false
+end)
 
 local SideBar = Instance.new("Frame", MainFrame)
 SideBar.Size = UDim2.new(0, 160, 1, -82)
@@ -55,7 +124,7 @@ local Header = Instance.new("Frame", MainFrame)
 Header.Size = UDim2.new(1, 0, 0, 80)
 Header.BackgroundColor3 = Color3.new(0, 0, 0)
 local Title = Instance.new("TextLabel", Header)
-Title.Size = UDim2.new(1, -20, 1, 0)
+Title.Size = UDim2.new(1, -40, 1, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "ECA Universal V4"
 Title.TextColor3 = Color3.new(1, 1, 1)
@@ -73,7 +142,7 @@ local Pages = {
     ESP = Instance.new("Frame", PageContainer),
     Wallhole = Instance.new("Frame", PageContainer),
     TP = Instance.new("Frame", PageContainer),
-    AutoFarm = Instance.new("Frame", PageContainer) -- 오토팜 페이지 추가
+    AutoFarm = Instance.new("Frame", PageContainer)
 }
 
 for _, p in pairs(Pages) do
@@ -104,7 +173,7 @@ createMenuBtn("☰ 플레이어 정보", 10, Pages.Player)
 createMenuBtn("👁 ESP(TEAMS)", 50, Pages.ESP)
 createMenuBtn("🧱 Wallhole Gun", 90, Pages.Wallhole)
 createMenuBtn("🚀 Gun Teleport", 130, Pages.TP)
-createMenuBtn("🚜 Auto Farm", 170, Pages.AutoFarm) -- 목록바에 오토팜 추가
+createMenuBtn("🚜 Auto Farm", 170, Pages.AutoFarm)
 
 -------------------------------------------------------
 -- [3. 기능용 버튼 UI 생성]
@@ -130,7 +199,6 @@ TpToggle.Text = "AUTO TP GUN: OFF"
 TpToggle.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
 TpToggle.TextColor3 = Color3.new(1,1,1)
 
--- 오토팜 버튼
 local CoinFarmBtn = Instance.new("TextButton", Pages.AutoFarm)
 CoinFarmBtn.Size = UDim2.new(0, 200, 0, 60)
 CoinFarmBtn.Position = UDim2.new(0.5, -100, 0.4, -30)
@@ -141,32 +209,23 @@ CoinFarmBtn.Font = Enum.Font.SourceSansBold
 CoinFarmBtn.TextSize = 20
 
 -------------------------------------------------------
--- [4. 핵심 기능 로직 통합]
+-- [4. 핵심 기능 로직]
 -------------------------------------------------------
 
--- 드래그 및 키 확인
-local function drag(obj)
-    local dragging, dragStart, startPos
-    obj.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true dragStart = i.Position startPos = obj.Position end end)
-    UserInputService.InputChanged:Connect(function(i) if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = i.Position - dragStart
-        obj.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end end)
-    UserInputService.InputEnded:Connect(function() dragging = false end)
-end
-drag(KeyFrame) drag(MainFrame)
-CheckKeyBtn.MouseButton1Click:Connect(function() if KeyInput.Text == "DORS123" then KeyFrame:Destroy() MainFrame.Visible = true end end)
+CheckKeyBtn.MouseButton1Click:Connect(function() 
+    if KeyInput.Text == "DORS123" then 
+        KeyFrame:Destroy() 
+        MainFrame.Visible = true 
+    end 
+end)
 
--- [기능 1] 관통 (KnifeProjectile & 's Bullet)
+-- [기능 1] 관통
 local wallholeEnabled = false
 local function handleWallhole(obj)
     if wallholeEnabled and obj:IsA("BasePart") then
         local n = obj.Name
         if n:find("'s Bullet") or n:find("Bullet") or n:find("Projectile") or n == "KnifeProjectile" or n == "Handle" then
             obj.CanCollide = false
-            obj:GetPropertyChangedSignal("CanCollide"):Connect(function()
-                if wallholeEnabled then obj.CanCollide = false end
-            end)
         end
     end
 end
@@ -176,10 +235,9 @@ WallToggle.MouseButton1Click:Connect(function()
     WallToggle.Text = wallholeEnabled and "Wallhole: ON" or "Wallhole: OFF"
     WallToggle.BackgroundColor3 = wallholeEnabled and Color3.new(1,1,1) or Color3.new(0,0,0)
     WallToggle.TextColor3 = wallholeEnabled and Color3.new(0,0,0) or Color3.new(1,1,1)
-    if wallholeEnabled then for _, v in pairs(workspace:GetDescendants()) do handleWallhole(v) end end
 end)
 
--- [기능 2] ESP (팀 구분)
+-- [기능 2] ESP
 local espEnabled = false
 task.spawn(function()
     while true do
@@ -195,35 +253,30 @@ task.spawn(function()
                 end
             end
         else
-            for _, v in pairs(Players:GetPlayers()) do if v.Character and v.Character:FindFirstChild("ECA_H") then v.Character.ECA_H.Enabled = false end end
+            for _, v in pairs(Players:GetPlayers()) do 
+                if v.Character and v.Character:FindFirstChild("ECA_H") then v.Character.ECA_H.Enabled = false end 
+            end
         end
         task.wait(0.5)
     end
 end)
 EspToggle.MouseButton1Click:Connect(function() espEnabled = not espEnabled EspToggle.Text = espEnabled and "ESP: ON" or "ESP: OFF" end)
 
--- [기능 3] 오토 코인팜 (고속 TP)
+-- [기능 3] 오토 코인팜
 local coinFarmActive = false
-local farmDelay = 0.15 -- 코인당 지연시간
-
 task.spawn(function()
     while true do
         if coinFarmActive and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
-            local root = lp.Character.HumanoidRootPart
-            local found = false
             for _, v in pairs(workspace:GetDescendants()) do
                 if coinFarmActive and v.Name == "Coin" and v:IsA("BasePart") then
-                    found = true
-                    root.CFrame = v.CFrame
-                    task.wait(farmDelay)
+                    lp.Character.HumanoidRootPart.CFrame = v.CFrame
+                    task.wait(0.15)
                 end
             end
-            if not found then task.wait(1) end
         end
         task.wait(0.1)
     end
 end)
-
 CoinFarmBtn.MouseButton1Click:Connect(function()
     coinFarmActive = not coinFarmActive
     CoinFarmBtn.Text = coinFarmActive and "COIN FARM: ON" or "COIN FARM: OFF"
