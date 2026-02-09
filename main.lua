@@ -39,38 +39,39 @@ MainFrame.BorderSizePixel = 2
 MainFrame.BorderColor3 = Color3.new(1, 1, 1)
 makeDraggable(MainFrame)
 
--- [최소화/복구 기능]
-local OpenButton = Instance.new("TextButton", ScreenGui)
-OpenButton.Size = UDim2.new(0, 50, 0, 50)
-OpenButton.Position = UDim2.new(0, 20, 0.5, -25)
-OpenButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-OpenButton.Text = "ECA"
-OpenButton.TextColor3 = Color3.new(1, 1, 1)
-OpenButton.Font = Enum.Font.SourceSansBold
-OpenButton.Visible = false -- 처음엔 숨김
-makeDraggable(OpenButton)
+-- [최소화된 열기 버튼]
+local OpenBtn = Instance.new("TextButton", ScreenGui)
+OpenBtn.Size = UDim2.new(0, 80, 0, 30)
+OpenBtn.Position = UDim2.new(0, 10, 1, -40) -- 좌측 하단 배치
+OpenBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+OpenBtn.Text = "OPEN GUI"
+OpenBtn.TextColor3 = Color3.new(1, 1, 1)
+OpenBtn.Font = Enum.Font.SourceSansBold
+OpenBtn.BorderSizePixel = 1
+OpenBtn.Visible = false -- 처음엔 숨김
 
-local CloseButton = Instance.new("TextButton", MainFrame)
-CloseButton.Size = UDim2.new(0, 30, 0, 30)
-CloseButton.Position = UDim2.new(1, -35, 0, 5)
-CloseButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-CloseButton.Text = "X"
-CloseButton.TextColor3 = Color3.new(1, 1, 1)
-CloseButton.Font = Enum.Font.SourceSansBold
+-- [닫기 버튼 (X)]
+local CloseBtn = Instance.new("TextButton", MainFrame)
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -35, 0, 5)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.new(1, 1, 1)
+CloseBtn.Font = Enum.Font.SourceSansBold
+CloseBtn.TextSize = 18
 
-CloseButton.MouseButton1Click:Connect(function()
+-- 열기/닫기 로직
+CloseBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = false
-    OpenButton.Visible = true
+    OpenBtn.Visible = true
 end)
 
-OpenButton.MouseButton1Click:Connect(function()
+OpenBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = true
-    OpenButton.Visible = false
+    OpenBtn.Visible = false
 end)
 
--------------------------------------------------------
--- [사이드바 및 페이지]
--------------------------------------------------------
+-- 사이드바 및 나머지 구성 요소들 (기존과 동일)
 local SideBar = Instance.new("Frame", MainFrame)
 SideBar.Size = UDim2.new(0, 150, 1, 0)
 SideBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -137,7 +138,7 @@ local function createToggle(parent, title, callback)
 end
 
 -------------------------------------------------------
--- [로직 적용]
+-- [기능 변수 및 로직 - 기존과 동일]
 -------------------------------------------------------
 local espOn, wallOn, tpOn, coinOn, rankOn = false, false, false, false, false
 local platform = nil
@@ -164,11 +165,11 @@ task.spawn(function()
             if isM then
                 if platform then platform:Destroy() platform = nil end
                 local k = lp.Character:FindFirstChild("Knife") or lp.Backpack:FindFirstChild("Knife")
-                k.Parent = lp.Character
+                if k then k.Parent = lp.Character end
                 for _, v in pairs(Players:GetPlayers()) do
                     if v ~= lp and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 then
                         lp.Character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,2)
-                        task.wait(0.05) k:Activate() task.wait(0.1)
+                        task.wait(0.05) if k then k:Activate() end task.wait(0.1)
                     end
                 end
             else
@@ -200,7 +201,12 @@ task.spawn(function()
 end)
 
 RunService.RenderStepped:Connect(function()
-    if not espOn then return end
+    if not espOn then 
+        for _, v in pairs(Players:GetPlayers()) do
+            if v.Character and v.Character:FindFirstChild("ECA_H") then v.Character.ECA_H.Enabled = false end
+        end
+        return 
+    end
     for _, v in pairs(Players:GetPlayers()) do
         if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
             local h = v.Character:FindFirstChild("ECA_H") or Instance.new("Highlight", v.Character)
@@ -217,7 +223,9 @@ workspace.DescendantAdded:Connect(function(obj)
     if wallOn and (obj.Name:find("Bullet") or obj.Name == "KnifeProjectile") then obj.CanCollide = false end
     if tpOn and (obj.Name == "GunDrop" or (obj.Name == "Handle" and obj.Parent.Name == "Gun")) then
         task.wait(0.05)
-        lp.Character.HumanoidRootPart.CFrame = obj:IsA("BasePart") and obj.CFrame or obj:GetModelCFrame()
+        if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+            lp.Character.HumanoidRootPart.CFrame = obj:IsA("BasePart") and obj.CFrame or obj:GetModelCFrame()
+        end
     end
 end)
 
