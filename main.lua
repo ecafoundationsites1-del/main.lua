@@ -14,27 +14,39 @@ ScreenGui.Name = uiName
 ScreenGui.ResetOnSpawn = false
 
 -------------------------------------------------------
--- [1. 드래그(이동) 기능 함수]
+-- [1. 모바일 & PC 공용 드래그 함수]
 -------------------------------------------------------
 local function makeDraggable(gui)
     local dragging, dragInput, dragStart, startPos
+
+    local function update(input)
+        local delta = input.Position - dragStart
+        gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+
     gui.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = gui.Position
+
             input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
             end)
         end
     end)
+
     gui.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
     end)
+
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            update(input)
         end
     end)
 end
@@ -46,17 +58,16 @@ local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 550, 0, 320)
 MainFrame.Position = UDim2.new(0.5, -275, 0.5, -160)
-MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.BorderSizePixel = 2
 MainFrame.BorderColor3 = Color3.new(1, 1, 1)
-MainFrame.Visible = false -- 로그인 전까지 숨김
-MainFrame.ZIndex = 1
-makeDraggable(MainFrame) -- 이동 기능 적용
+MainFrame.Visible = false
+makeDraggable(MainFrame)
 
--- 상단 바 (헤더)
+-- 상단 바
 local Header = Instance.new("Frame", MainFrame)
 Header.Size = UDim2.new(1, 0, 0, 40)
-Header.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Header.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Header.BorderSizePixel = 0
 
 local Title = Instance.new("TextLabel", Header)
@@ -68,14 +79,12 @@ Title.TextSize = 18
 Title.Font = Enum.Font.SourceSansBold
 Title.TextXAlignment = Enum.TextXAlignment.Right
 
--- 사이드바 (목록바)
+-- 사이드바
 local SideBar = Instance.new("Frame", MainFrame)
-SideBar.Name = "SideBar"
 SideBar.Size = UDim2.new(0, 150, 1, -40)
 SideBar.Position = UDim2.new(0, 0, 0, 40)
-SideBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+SideBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 SideBar.BorderSizePixel = 0
-SideBar.ZIndex = 2
 
 -- 페이지 컨테이너
 local PageContainer = Instance.new("Frame", MainFrame)
@@ -99,21 +108,17 @@ end
 Pages.Player.Visible = true
 
 -------------------------------------------------------
--- [3. 사이드바 버튼 생성 (실종 방지용)]
+-- [3. UI 컴포넌트 생성 함수]
 -------------------------------------------------------
 local function createMenuBtn(name, pos, page)
     local btn = Instance.new("TextButton", SideBar)
-    btn.Name = name .. "_Btn"
     btn.Size = UDim2.new(0, 130, 0, 35)
     btn.Position = UDim2.new(0, 10, 0, pos)
-    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     btn.TextColor3 = Color3.new(1, 1, 1)
     btn.Text = name
     btn.Font = Enum.Font.SourceSansBold
     btn.TextSize = 14
-    btn.BorderSizePixel = 1
-    btn.BorderColor3 = Color3.fromRGB(100, 100, 100)
-    btn.ZIndex = 3
 
     btn.MouseButton1Click:Connect(function()
         for _, p in pairs(Pages) do p.Visible = false end
@@ -121,39 +126,74 @@ local function createMenuBtn(name, pos, page)
     end)
 end
 
--- 버튼 리스트 (정확하게 순서대로 배치)
+local function createToggle(parent, text, pos, callback)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(0, 360, 0, 40)
+    btn.Position = UDim2.new(0, 5, 0, pos)
+    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Text = text .. " : OFF"
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 16
+    
+    local enabled = false
+    btn.MouseButton1Click:Connect(function()
+        enabled = not enabled
+        btn.Text = text .. (enabled and " : ON" or " : OFF")
+        btn.BackgroundColor3 = enabled and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(35, 35, 35)
+        callback(enabled)
+    end)
+end
+
+-------------------------------------------------------
+-- [4. 기능 연결 및 버튼 배치]
+-------------------------------------------------------
+local wallholeEnabled = false
+local coinFarmActive = false
+
 createMenuBtn("☰ PLAYER", 15, Pages.Player)
 createMenuBtn("👁 ESP", 55, Pages.ESP)
 createMenuBtn("🧱 WALLHOLE", 95, Pages.Wallhole)
 createMenuBtn("🚀 GUN TP", 135, Pages.TP)
 createMenuBtn("🚜 AUTO FARM", 175, Pages.AutoFarm)
 
--------------------------------------------------------
--- [4. 핵심 기능 로직]
--------------------------------------------------------
+createToggle(Pages.Player, "Speed Hack (100)", 10, function(state)
+    if lp.Character and lp.Character:FindFirstChild("Humanoid") then
+        lp.Character.Humanoid.WalkSpeed = state and 100 or 16
+    end
+end)
 
--- 1. [관통] KnifeProjectile + 's Bullet
-local wallholeEnabled = false
+createToggle(Pages.ESP, "Player ESP (Visual)", 10, function(state)
+    print("ESP 기능: " .. tostring(state))
+end)
+
+createToggle(Pages.Wallhole, "Bullet Wallhole", 10, function(state)
+    wallholeEnabled = state
+end)
+
+createToggle(Pages.AutoFarm, "Coin Auto Farm", 10, function(state)
+    coinFarmActive = state
+end)
+
+-------------------------------------------------------
+-- [5. 핵심 로직 루프]
+-------------------------------------------------------
 workspace.DescendantAdded:Connect(function(obj)
     if wallholeEnabled and obj:IsA("BasePart") then
         local n = obj.Name
-        if n:find("'s Bullet") or n:find("Bullet") or n:find("Projectile") or n == "KnifeProjectile" then
+        if n:find("Bullet") or n:find("Projectile") or n == "KnifeProjectile" then
             obj.CanCollide = false
-            obj:GetPropertyChangedSignal("CanCollide"):Connect(function()
-                if wallholeEnabled then obj.CanCollide = false end
-            end)
         end
     end
 end)
 
--- 2. [오토팜] Coin 고속 TP
-local coinFarmActive = false
 task.spawn(function()
     while true do
         if coinFarmActive and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
             local root = lp.Character.HumanoidRootPart
             for _, v in pairs(workspace:GetDescendants()) do
-                if coinFarmActive and v.Name == "Coin" and v:IsA("BasePart") then
+                if not coinFarmActive then break end
+                if v.Name == "Coin" and v:IsA("BasePart") then
                     root.CFrame = v.CFrame
                     task.wait(0.15)
                 end
@@ -164,7 +204,7 @@ task.spawn(function()
 end)
 
 -------------------------------------------------------
--- [5. 키 시스템 및 로그인 처리]
+-- [6. 키 시스템 (모바일 드래그 지원)]
 -------------------------------------------------------
 local KeyFrame = Instance.new("Frame", ScreenGui)
 KeyFrame.Size = UDim2.new(0, 400, 0, 200)
@@ -172,7 +212,7 @@ KeyFrame.Position = UDim2.new(0.5, -200, 0.5, -100)
 KeyFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 KeyFrame.BorderSizePixel = 2
 KeyFrame.BorderColor3 = Color3.new(1, 1, 1)
-makeDraggable(KeyFrame)
+makeDraggable(KeyFrame) -- 키 입력창도 드래그 가능하게 수정
 
 local KeyInput = Instance.new("TextBox", KeyFrame)
 KeyInput.Size = UDim2.new(0, 280, 0, 40)
@@ -180,12 +220,14 @@ KeyInput.Position = UDim2.new(0.5, -140, 0.35, 0)
 KeyInput.Text = "DORS123"
 KeyInput.TextColor3 = Color3.new(0, 0, 0)
 KeyInput.BackgroundColor3 = Color3.new(0.8, 0.8, 0.8)
+KeyInput.ClearTextOnFocus = false -- 모바일 편의성 위해 추가
 
 local LoginBtn = Instance.new("TextButton", KeyFrame)
 LoginBtn.Size = UDim2.new(0, 120, 0, 40)
 LoginBtn.Position = UDim2.new(0.5, -60, 0.7, 0)
 LoginBtn.Text = "LOGIN"
 LoginBtn.BackgroundColor3 = Color3.new(0, 0.8, 0)
+LoginBtn.TextColor3 = Color3.new(1, 1, 1)
 
 LoginBtn.MouseButton1Click:Connect(function()
     if KeyInput.Text == "DORS123" then
@@ -193,3 +235,4 @@ LoginBtn.MouseButton1Click:Connect(function()
         MainFrame.Visible = true
     end
 end)
+
