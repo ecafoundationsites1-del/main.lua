@@ -1,6 +1,7 @@
 -- 서비스 로드
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local lp = Players.LocalPlayer
 
 -- UI 생성
@@ -39,7 +40,7 @@ local function makeDraggable(obj)
 end
 
 -------------------------------------------------------
--- [최소화 및 메인 UI]
+-- [UI 구성 요소]
 -------------------------------------------------------
 local OpenBtn = Instance.new("TextButton", ScreenGui)
 OpenBtn.Size = UDim2.new(0, 50, 0, 50)
@@ -85,7 +86,7 @@ CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false OpenBtn.
 OpenBtn.MouseButton1Click:Connect(function() MainFrame.Visible = true OpenBtn.Visible = false end)
 CheckKeyBtn.MouseButton1Click:Connect(function() if KeyInput.Text == "DORS123" then KeyFrame:Destroy() MainFrame.Visible = true end end)
 
--- 사이드바 및 페이지
+-- 페이지 설정
 local SideBar = Instance.new("Frame", MainFrame)
 SideBar.Size = UDim2.new(0, 160, 1, -82)
 SideBar.Position = UDim2.new(0, 0, 0, 82)
@@ -119,7 +120,6 @@ createMenuBtn("🧱 Wallhole", 90, Pages.Wallhole)
 createMenuBtn("🚀 Gun TP", 130, Pages.TP)
 createMenuBtn("🚜 Auto Farm", 170, Pages.AutoFarm)
 
--- 기능 버튼들
 local EspToggle = Instance.new("TextButton", Pages.ESP)
 EspToggle.Size = UDim2.new(0, 180, 0, 50)
 EspToggle.Position = UDim2.new(0.5, -90, 0.4, -25)
@@ -141,88 +141,98 @@ CoinFarmBtn.Position = UDim2.new(0.5, -100, 0.4, -30)
 CoinFarmBtn.Text = "COIN FARM: OFF"
 
 -------------------------------------------------------
--- [핵심 로직 시스템]
+-- [개선된 핵심 시스템]
 -------------------------------------------------------
 local coinFarmActive = false
 local tpActive = false
 local wallholeEnabled = false
 local espEnabled = false
-local safetyDistance = 10 
+local safetyDistance = 12 -- 안전 거리 약간 상향
 local platform = nil
 
--- 살인자 찾기 함수
-local function getMurderer()
-    for _, v in pairs(Players:GetPlayers()) do
-        if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-            if v.Character:FindFirstChild("Knife") or v.Backpack:FindFirstChild("Knife") then
-                return v.Character.HumanoidRootPart
-            end
-        end
-    end
-    return nil
+-- 무기 소지 여부 체크 함수
+local function checkWeapon(player, weaponName)
+    if player.Character and player.Character:FindFirstChild(weaponName) then return true end
+    if player:FindFirstChild("Backpack") and player.Backpack:FindFirstChild(weaponName) then return true end
+    return false
 end
 
--- 스카이 스폰 및 발판
-local function skySpawn()
-    if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
-        lp.Character.HumanoidRootPart.CFrame = CFrame.new(0, 500, 0)
-        if not platform or not platform.Parent then
-            platform = Instance.new("Part")
-            platform.Size = Vector3.new(20, 1, 20)
-            platform.Position = Vector3.new(0, 495, 0)
-            platform.Anchored = true
-            platform.Transparency = 0.5
-            platform.BrickColor = BrickColor.new("Bright blue")
-            platform.Parent = workspace
-        end
-    end
-end
-
--- [기능 1] ESP
-task.spawn(function()
-    while true do
-        if espEnabled then
-            for _, v in pairs(Players:GetPlayers()) do
-                if v ~= lp and v.Character then
-                    local h = v.Character:FindFirstChild("ECA_H") or Instance.new("Highlight", v.Character)
-                    h.Name = "ECA_H"
-                    local isM = v.Character:FindFirstChild("Knife") or v.Backpack:FindFirstChild("Knife")
-                    h.FillColor = isM and Color3.new(1,0,0) or Color3.new(0,1,0)
-                    h.Enabled = true
+-- [개선된 ESP] 깜빡임 방지를 위해 RenderStepped 사용
+RunService.RenderStepped:Connect(function()
+    if espEnabled then
+        for _, v in pairs(Players:GetPlayers()) do
+            if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                local h = v.Character:FindFirstChild("ECA_Highlight") or Instance.new("Highlight")
+                h.Name = "ECA_Highlight"
+                h.Parent = v.Character
+                
+                if checkWeapon(v, "Knife") then
+                    h.FillColor = Color3.new(1, 0, 0) -- 살인자 (빨강)
+                elseif checkWeapon(v, "Gun") or checkWeapon(v, "Revolver") then
+                    h.FillColor = Color3.new(0, 0, 1) -- 보안관 (파랑)
+                else
+                    h.FillColor = Color3.new(0, 1, 0) -- 시민 (초록)
                 end
+                h.Enabled = true
             end
-        else
-            for _, v in pairs(Players:GetPlayers()) do if v.Character and v.Character:FindFirstChild("ECA_H") then v.Character.ECA_H.Enabled = false end end
         end
-        task.wait(0.5)
+    else
+        for _, v in pairs(Players:GetPlayers()) do
+            if v.Character and v.Character:FindFirstChild("ECA_Highlight") then
+                v.Character.ECA_Highlight.Enabled = false
+            end
+        end
     end
 end)
 
--- [기능 2] Wallhole
+-- [Wallhole]
 workspace.DescendantAdded:Connect(function(obj)
     if wallholeEnabled and obj:IsA("BasePart") then
-        if obj.Name:find("'s Bullet") or obj.Name == "KnifeProjectile" then
+        if obj.Name:find("Bullet") or obj.Name == "KnifeProjectile" then
             obj.CanCollide = false
         end
     end
 end)
 
--- [기능 3] Gun Teleport (복구됨)
+-- [Gun TP]
 workspace.DescendantAdded:Connect(function(obj)
     if tpActive and (obj.Name == "GunDrop" or (obj.Name == "Handle" and obj.Parent and obj.Parent.Name == "Gun")) then
-        task.wait(0.1)
+        task.wait(0.05) -- 반응 속도 상향
         if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
             lp.Character.HumanoidRootPart.CFrame = obj:IsA("BasePart") and obj.CFrame or obj:GetModelCFrame()
         end
     end
 end)
 
--- [기능 4] Auto Farm + Sky System
+-- [개선된 Auto Farm]
+local function skySpawn()
+    if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+        lp.Character.HumanoidRootPart.CFrame = CFrame.new(0, 700, 0)
+        if not platform or not platform.Parent then
+            platform = Instance.new("Part")
+            platform.Size = Vector3.new(30, 1, 30)
+            platform.Position = Vector3.new(0, 695, 0)
+            platform.Anchored = true
+            platform.Transparency = 0.5
+            platform.Parent = workspace
+        end
+    end
+end
+
 task.spawn(function()
     while true do
         if coinFarmActive and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
             local root = lp.Character.HumanoidRootPart
-            local murdererRoot = getMurderer()
+            local murderer = nil
+            
+            -- 살인자 위치 실시간 확인
+            for _, v in pairs(Players:GetPlayers()) do
+                if v ~= lp and checkWeapon(v, "Knife") and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                    murderer = v.Character.HumanoidRootPart
+                    break
+                end
+            end
+
             local coins = {}
             for _, v in pairs(workspace:GetDescendants()) do
                 if v.Name == "Coin" and v:IsA("BasePart") then table.insert(coins, v) end
@@ -232,25 +242,29 @@ task.spawn(function()
                 if platform then platform:Destroy() platform = nil end
                 for _, coin in pairs(coins) do
                     if not coinFarmActive then break end
-                    local safe = true
-                    if murdererRoot then
-                        if (coin.Position - murdererRoot.Position).Magnitude < safetyDistance then safe = false end
+                    
+                    local isSafe = true
+                    if murderer then
+                        if (coin.Position - murderer.Position).Magnitude < safetyDistance then
+                            isSafe = false
+                        end
                     end
-                    if safe then
+                    
+                    if isSafe then
                         root.CFrame = coin.CFrame
-                        task.wait(0.15)
+                        task.wait(0.12) -- 수집 속도 최적화
                     end
                 end
             else
                 skySpawn()
             end
         end
-        task.wait(0.1)
+        task.wait(0.05)
     end
 end)
 
 -------------------------------------------------------
--- [버튼 이벤트 연결]
+-- [버튼 이벤트]
 -------------------------------------------------------
 EspToggle.MouseButton1Click:Connect(function()
     espEnabled = not espEnabled
