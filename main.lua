@@ -39,12 +39,42 @@ MainFrame.BorderSizePixel = 2
 MainFrame.BorderColor3 = Color3.new(1, 1, 1)
 makeDraggable(MainFrame)
 
--- 사이드바
+-- [최소화/복구 기능]
+local OpenButton = Instance.new("TextButton", ScreenGui)
+OpenButton.Size = UDim2.new(0, 50, 0, 50)
+OpenButton.Position = UDim2.new(0, 20, 0.5, -25)
+OpenButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+OpenButton.Text = "ECA"
+OpenButton.TextColor3 = Color3.new(1, 1, 1)
+OpenButton.Font = Enum.Font.SourceSansBold
+OpenButton.Visible = false -- 처음엔 숨김
+makeDraggable(OpenButton)
+
+local CloseButton = Instance.new("TextButton", MainFrame)
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -35, 0, 5)
+CloseButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.new(1, 1, 1)
+CloseButton.Font = Enum.Font.SourceSansBold
+
+CloseButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    OpenButton.Visible = true
+end)
+
+OpenButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = true
+    OpenButton.Visible = false
+end)
+
+-------------------------------------------------------
+-- [사이드바 및 페이지]
+-------------------------------------------------------
 local SideBar = Instance.new("Frame", MainFrame)
 SideBar.Size = UDim2.new(0, 150, 1, 0)
 SideBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 
--- 페이지 컨테이너
 local PageContainer = Instance.new("Frame", MainFrame)
 PageContainer.Size = UDim2.new(1, -150, 1, 0)
 PageContainer.Position = UDim2.new(0, 150, 0, 0)
@@ -60,15 +90,13 @@ local function createPage(name)
     return p
 end
 
--- 페이지 생성
 createPage("ESP")
 createPage("Wallhole")
 createPage("TP")
 createPage("AutoFarm")
-createPage("RankFarm") -- 랭크팜 페이지 추가
+createPage("RankFarm")
 Pages.ESP.Visible = true
 
--- 사이드바 버튼 생성
 local function createMenuBtn(name, displayName, pos)
     local btn = Instance.new("TextButton", SideBar)
     btn.Size = UDim2.new(1, -10, 0, 40)
@@ -87,9 +115,8 @@ createMenuBtn("ESP", "👁 ESP", 10)
 createMenuBtn("Wallhole", "🧱 Wallhole", 60)
 createMenuBtn("TP", "🚀 Gun TP", 110)
 createMenuBtn("AutoFarm", "🚜 Coin Farm", 160)
-createMenuBtn("RankFarm", "⭐ Rank Farm", 210) -- 사이드바 버튼
+createMenuBtn("RankFarm", "⭐ Rank Farm", 210)
 
--- 활성화 버튼 생성 함수
 local function createToggle(parent, title, callback)
     local btn = Instance.new("TextButton", parent)
     btn.Size = UDim2.new(0, 220, 0, 60)
@@ -110,7 +137,7 @@ local function createToggle(parent, title, callback)
 end
 
 -------------------------------------------------------
--- [기능 변수 및 로직]
+-- [로직 적용]
 -------------------------------------------------------
 local espOn, wallOn, tpOn, coinOn, rankOn = false, false, false, false, false
 local platform = nil
@@ -123,19 +150,16 @@ local function checkWeapon(plr, names)
     return false
 end
 
--- 페이지별 버튼 연결
 createToggle(Pages.ESP, "ESP", function(v) espOn = v end)
 createToggle(Pages.Wallhole, "Wallhole", function(v) wallOn = v end)
 createToggle(Pages.TP, "Gun TP", function(v) tpOn = v end)
 createToggle(Pages.AutoFarm, "Coin Farm", function(v) coinOn = v if not v and platform then platform:Destroy() platform = nil end end)
 createToggle(Pages.RankFarm, "Rank Farm", function(v) rankOn = v if not v and platform then platform:Destroy() platform = nil end end)
 
--- [통합 루프]
 task.spawn(function()
     while true do
         task.wait(0.01)
         if rankOn then
-            -- 랭크팜 로직
             local isM = checkWeapon(lp, {"Knife"})
             if isM then
                 if platform then platform:Destroy() platform = nil end
@@ -148,7 +172,6 @@ task.spawn(function()
                     end
                 end
             else
-                -- 보안관/시민이면 하늘 대기 (Y=800)
                 if not platform then
                     lp.Character.HumanoidRootPart.CFrame = CFrame.new(0, 800, 0)
                     platform = Instance.new("Part", workspace)
@@ -156,7 +179,6 @@ task.spawn(function()
                 end
             end
         elseif coinOn then
-            -- 코인팜 로직 (기존 속도 유지)
             local coins = {}
             for _, v in pairs(workspace:GetDescendants()) do if v.Name == "Coin" then table.insert(coins, v) end end
             if #coins > 0 then
@@ -177,7 +199,6 @@ task.spawn(function()
     end
 end)
 
--- ESP & Wallhole & Gun TP (RenderStepped/Events)
 RunService.RenderStepped:Connect(function()
     if not espOn then return end
     for _, v in pairs(Players:GetPlayers()) do
@@ -199,3 +220,4 @@ workspace.DescendantAdded:Connect(function(obj)
         lp.Character.HumanoidRootPart.CFrame = obj:IsA("BasePart") and obj.CFrame or obj:GetModelCFrame()
     end
 end)
+
