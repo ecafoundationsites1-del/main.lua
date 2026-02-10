@@ -6,7 +6,7 @@ local lp = Players.LocalPlayer
 
 -- UI 생성
 local ScreenGui = Instance.new("ScreenGui", gethui() or game:GetService("CoreGui"))
-ScreenGui.Name = "ECA_V4_FINAL_RANK"
+ScreenGui.Name = "ECA_V4_ULTIMATE_FINAL"
 ScreenGui.ResetOnSpawn = false
 
 -------------------------------------------------------
@@ -45,7 +45,6 @@ OpenBtn.Position = UDim2.new(0, 10, 1, -40)
 OpenBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 OpenBtn.Text = "OPEN GUI"
 OpenBtn.TextColor3 = Color3.new(1, 1, 1)
-OpenBtn.Font = Enum.Font.SourceSansBold
 OpenBtn.Visible = false
 
 local CloseBtn = Instance.new("TextButton", MainFrame)
@@ -124,12 +123,10 @@ end
 -------------------------------------------------------
 local espOn, wallOn, tpOn, coinOn, rankOn = false, false, false, false, false
 
--- 무기 소지 확인 함수
 local function checkWeapon(plr, names)
     if not plr or not plr.Character then return false end
     for _, n in pairs(names) do
-        if plr.Character:FindFirstChild(n) then return true end
-        if plr.Backpack:FindFirstChild(n) then return true end
+        if plr.Character:FindFirstChild(n) or plr.Backpack:FindFirstChild(n) then return true end
     end
     return false
 end
@@ -140,35 +137,56 @@ createToggle(Pages.TP, "Gun TP", function(v) tpOn = v end)
 createToggle(Pages.AutoFarm, "Coin Farm", function(v) coinOn = v end)
 createToggle(Pages.RankFarm, "Rank Farm", function(v) rankOn = v end)
 
--- 공용 안전 플랫폼 (한 번만 생성)
+-- 안전 플랫폼 (Y=900 공중에 고정)
 local safePlatform = Instance.new("Part")
 safePlatform.Name = "ECA_UniversalPlatform"
-safePlatform.Size = Vector3.new(50, 1, 50)
+safePlatform.Size = Vector3.new(30, 1, 30)
 safePlatform.Anchored = true
-safePlatform.CanCollide = true
-safePlatform.Position = Vector3.new(0, -500, 0) 
+safePlatform.Transparency = 1
 safePlatform.Parent = workspace
 
 task.spawn(function()
     while true do
-        task.wait(0.1)
+        task.wait(0.15) -- 요청하신 0.15초 딜레이
         
-        -- 캐릭터 확인
         local char = lp.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
         if not root then continue end
 
-        -- 기능 꺼져있으면 플랫폼 숨기기
-        if not (rankOn or coinOn) then
-            safePlatform.Position = Vector3.new(0, -500, 0)
-            continue
-        end
+        if coinOn then
+            -- 히트박스 스냅 방식 코인 팜
+            local coin = nil
+            for _, v in pairs(workspace:GetDescendants()) do
+                if (v.Name == "Coin" or v.Name == "GoldCoin" or v.Name == "CandyCorn") and v:IsA("BasePart") then
+                    coin = v
+                    break
+                end
+            end
 
-        if rankOn then
-            local isMurderer = checkWeapon(lp, {"Knife"})
-            
-            if isMurderer then
-                -- 살인마인 경우 타겟 추적
+            if coin then
+                local oldCFrame = CFrame.new(0, 903, 0) -- 복귀할 안전한 좌표
+                safePlatform.Position = Vector3.new(0, 900, 0)
+                
+                -- 1. 코인으로 순간이동
+                root.Velocity = Vector3.new(0,0,0)
+                root.CFrame = coin.CFrame
+                
+                -- 2. 아주 짧게 대기 (판정 인식)
+                task.wait(0.02)
+                
+                -- 3. 다시 안전한 공중 플랫폼으로 복귀
+                root.CFrame = oldCFrame
+            else
+                -- 코인 없으면 공중 플랫폼 대기
+                safePlatform.Position = Vector3.new(0, 900, 0)
+                root.CFrame = CFrame.new(0, 903, 0)
+                root.Velocity = Vector3.new(0,0,0)
+            end
+
+        elseif rankOn then
+            -- 랭크 팜 (살인자면 죽이고, 아니면 공중 대기)
+            local isM = checkWeapon(lp, {"Knife"})
+            if isM then
                 local target = nil
                 for _, v in pairs(Players:GetPlayers()) do
                     if v ~= lp and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 then
@@ -177,60 +195,42 @@ task.spawn(function()
                     end
                 end
 
-                if target and target.Character:FindFirstChild("HumanoidRootPart") then
-                    safePlatform.Position = Vector3.new(0, -500, 0) -- 추적 시 플랫폼 치우기
+                if target then
+                    safePlatform.Position = Vector3.new(0, -500, 0) -- 전투 시 플랫폼 제거
+                    root.Velocity = Vector3.new(0,0,0)
+                    -- 타겟 뒤에 밀착 (퉁퉁사후르 거리 해결)
+                    root.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 0.7)
                     local k = char:FindFirstChild("Knife") or lp.Backpack:FindFirstChild("Knife")
                     if k then 
-                        k.Parent = char
-                        root.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-                        task.wait(0.05)
-                        k:Activate()
+                        k.Parent = char 
+                        k:Activate() 
                     end
                 else
-                    -- 타겟 없으면 공허 대기
-                    safePlatform.Position = Vector3.new(0, 800, 0)
-                    root.CFrame = CFrame.new(0, 805, 0)
+                    -- 전원 처치 시 5초 대기 (무승부 방지)
+                    task.wait(5)
+                    safePlatform.Position = Vector3.new(0, 997, 0)
+                    root.CFrame = CFrame.new(0, 1000, 0)
                 end
             else
-                -- 시민/보안관이면 공허 대기
-                safePlatform.Position = Vector3.new(0, 800, 0)
-                root.CFrame = CFrame.new(0, 805, 0)
+                -- 살인마 아니면 공중 대기
+                safePlatform.Position = Vector3.new(0, 997, 0)
+                root.CFrame = CFrame.new(0, 1000, 0)
+                root.Velocity = Vector3.new(0,0,0)
             end
-
-        elseif coinOn then
-            -- 코인 팜 로직
-            local coin = nil
-            for _, v in pairs(workspace:GetDescendants()) do
-                if v.Name == "Coin" or v.Name == "GoldCoin" then coin = v break end
-            end
-
-            if coin and coin:IsA("BasePart") then
-                safePlatform.Position = Vector3.new(0, -500, 0)
-                root.CFrame = coin.CFrame
-            else
-                -- 코인 없으면 공허 대기
-                safePlatform.Position = Vector3.new(0, 700, 0)
-                root.CFrame = CFrame.new(0, 705, 0)
-            end
+        else
+            -- 기능 꺼짐
+            safePlatform.Position = Vector3.new(0, -500, 0)
         end
     end
 end)
 
--- ESP 로직
+-- ESP & 총기/투사체 이벤트
 RunService.RenderStepped:Connect(function()
     for _, v in pairs(Players:GetPlayers()) do
         if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
             local h = v.Character:FindFirstChild("ECA_H")
-            if not espOn then
-                if h then h.Enabled = false end
-                continue
-            end
-            
-            if not h then
-                h = Instance.new("Highlight", v.Character)
-                h.Name = "ECA_H"
-            end
-            
+            if not espOn then if h then h.Enabled = false end continue end
+            if not h then h = Instance.new("Highlight", v.Character) h.Name = "ECA_H" end
             h.Enabled = true
             if checkWeapon(v, {"Knife"}) then h.FillColor = Color3.new(1,0,0)
             elseif checkWeapon(v, {"Gun", "Revolver"}) then h.FillColor = Color3.new(0,0,1)
@@ -239,14 +239,12 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 총기/투사체 감지
 workspace.DescendantAdded:Connect(function(obj)
     if wallOn and (obj.Name:find("Bullet") or obj.Name == "KnifeProjectile") then obj.CanCollide = false end
     if tpOn and (obj.Name == "GunDrop" or (obj.Name == "Handle" and obj.Parent.Name == "Gun")) then
         task.wait(0.1)
-        local root = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
-        if root then
-            root.CFrame = obj:IsA("BasePart") and obj.CFrame or obj:GetModelCFrame()
+        if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+            lp.Character.HumanoidRootPart.CFrame = obj:IsA("BasePart") and obj.CFrame or obj:GetModelCFrame()
         end
     end
 end)
