@@ -6,7 +6,7 @@ local lp = Players.LocalPlayer
 
 -- UI 생성
 local ScreenGui = Instance.new("ScreenGui", gethui() or game:GetService("CoreGui"))
-ScreenGui.Name = "ECA_V4_ULTIMATE_FINAL"
+ScreenGui.Name = "ECA_V4_FINAL_WALL_BREAKER"
 ScreenGui.ResetOnSpawn = false
 
 -------------------------------------------------------
@@ -122,6 +122,7 @@ end
 -- [기능 로직]
 -------------------------------------------------------
 local espOn, wallOn, tpOn, coinOn, rankOn = false, false, false, false, false
+local wallParts = {} -- 벽 복구용 테이블
 
 local function checkWeapon(plr, names)
     if not plr or not plr.Character then return false end
@@ -131,15 +132,38 @@ local function checkWeapon(plr, names)
     return false
 end
 
-createToggle(Pages.ESP, "ESP", function(v) espOn = v end)
-createToggle(Pages.Wallhole, "Wallhole", function(v) wallOn = v end)
-createToggle(Pages.TP, "Gun TP", function(v) tpOn = v end)
-createToggle(Pages.AutoFarm, "Coin Farm", function(v) coinOn = v end)
-createToggle(Pages.RankFarm, "Rank Farm", function(v) rankOn = v end)
+-- 벽 제거 로직
+local function toggleWalls(v)
+    if v then
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and not obj.Name:lower():find("floor") and not obj.Name:lower():find("baseplate") then
+                if not wallParts[obj] then
+                    wallParts[obj] = {Transparency = obj.Transparency, CanCollide = obj.CanCollide}
+                end
+                obj.Transparency = 0.6
+                obj.CanCollide = false
+            end
+        end
+    else
+        for obj, data in pairs(wallParts) do
+            if obj and obj.Parent then
+                obj.Transparency = data.Transparency
+                obj.CanCollide = data.CanCollide
+            end
+        end
+        wallParts = {}
+    end
+end
 
--- 안전 플랫폼 (Y=900 공중에 고정)
+createToggle(Pages.ESP, "ESP", function(v) espOn = v end)
+createToggle(Pages.Wallhole, "Wall Destroyer", function(v) wallOn = v toggleWalls(v) end)
+createToggle(Pages.TP, "Gun TP", function(v) tpOn = v end)
+createToggle(Pages.AutoFarm, "Snap Coin Farm", function(v) coinOn = v end)
+createToggle(Pages.RankFarm, "Pro Rank Farm", function(v) rankOn = v end)
+
+-- 공용 플랫폼 (Y=900)
 local safePlatform = Instance.new("Part")
-safePlatform.Name = "ECA_UniversalPlatform"
+safePlatform.Name = "ECA_SafePlatform"
 safePlatform.Size = Vector3.new(30, 1, 30)
 safePlatform.Anchored = true
 safePlatform.Transparency = 1
@@ -147,84 +171,61 @@ safePlatform.Parent = workspace
 
 task.spawn(function()
     while true do
-        task.wait(0.15) -- 요청하신 0.15초 딜레이
-        
+        task.wait(0.15)
         local char = lp.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
         if not root then continue end
 
         if coinOn then
-            -- 히트박스 스냅 방식 코인 팜
+            -- 히트박스 스냅 방식: 몸은 공중, 판정만 코인으로
             local coin = nil
             for _, v in pairs(workspace:GetDescendants()) do
                 if (v.Name == "Coin" or v.Name == "GoldCoin" or v.Name == "CandyCorn") and v:IsA("BasePart") then
-                    coin = v
-                    break
+                    coin = v break
                 end
             end
-
             if coin then
-                local oldCFrame = CFrame.new(0, 903, 0) -- 복귀할 안전한 좌표
+                local oldCFrame = CFrame.new(0, 903, 0)
                 safePlatform.Position = Vector3.new(0, 900, 0)
-                
-                -- 1. 코인으로 순간이동
                 root.Velocity = Vector3.new(0,0,0)
-                root.CFrame = coin.CFrame
-                
-                -- 2. 아주 짧게 대기 (판정 인식)
+                root.CFrame = coin.CFrame -- 스냅
                 task.wait(0.02)
-                
-                -- 3. 다시 안전한 공중 플랫폼으로 복귀
-                root.CFrame = oldCFrame
+                root.CFrame = oldCFrame -- 복귀
             else
-                -- 코인 없으면 공중 플랫폼 대기
                 safePlatform.Position = Vector3.new(0, 900, 0)
                 root.CFrame = CFrame.new(0, 903, 0)
-                root.Velocity = Vector3.new(0,0,0)
             end
 
         elseif rankOn then
-            -- 랭크 팜 (살인자면 죽이고, 아니면 공중 대기)
             local isM = checkWeapon(lp, {"Knife"})
             if isM then
                 local target = nil
                 for _, v in pairs(Players:GetPlayers()) do
                     if v ~= lp and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 then
-                        target = v
-                        break
+                        target = v break
                     end
                 end
-
                 if target then
-                    safePlatform.Position = Vector3.new(0, -500, 0) -- 전투 시 플랫폼 제거
-                    root.Velocity = Vector3.new(0,0,0)
-                    -- 타겟 뒤에 밀착 (퉁퉁사후르 거리 해결)
+                    safePlatform.Position = Vector3.new(0, -500, 0)
                     root.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 0.7)
                     local k = char:FindFirstChild("Knife") or lp.Backpack:FindFirstChild("Knife")
-                    if k then 
-                        k.Parent = char 
-                        k:Activate() 
-                    end
+                    if k then k.Parent = char k:Activate() end
                 else
-                    -- 전원 처치 시 5초 대기 (무승부 방지)
-                    task.wait(5)
+                    task.wait(5) -- 전원 처치 시 5초 대기 (무승부 방지)
                     safePlatform.Position = Vector3.new(0, 997, 0)
                     root.CFrame = CFrame.new(0, 1000, 0)
                 end
             else
-                -- 살인마 아니면 공중 대기
                 safePlatform.Position = Vector3.new(0, 997, 0)
                 root.CFrame = CFrame.new(0, 1000, 0)
-                root.Velocity = Vector3.new(0,0,0)
             end
         else
-            -- 기능 꺼짐
             safePlatform.Position = Vector3.new(0, -500, 0)
         end
     end
 end)
 
--- ESP & 총기/투사체 이벤트
+-- ESP 로직
 RunService.RenderStepped:Connect(function()
     for _, v in pairs(Players:GetPlayers()) do
         if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
@@ -239,8 +240,8 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- 총기 드랍 자동 획득
 workspace.DescendantAdded:Connect(function(obj)
-    if wallOn and (obj.Name:find("Bullet") or obj.Name == "KnifeProjectile") then obj.CanCollide = false end
     if tpOn and (obj.Name == "GunDrop" or (obj.Name == "Handle" and obj.Parent.Name == "Gun")) then
         task.wait(0.1)
         if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
