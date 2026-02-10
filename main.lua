@@ -39,39 +39,25 @@ MainFrame.BorderSizePixel = 2
 MainFrame.BorderColor3 = Color3.new(1, 1, 1)
 makeDraggable(MainFrame)
 
--- [최소화된 열기 버튼]
 local OpenBtn = Instance.new("TextButton", ScreenGui)
 OpenBtn.Size = UDim2.new(0, 80, 0, 30)
-OpenBtn.Position = UDim2.new(0, 10, 1, -40) -- 좌측 하단 배치
+OpenBtn.Position = UDim2.new(0, 10, 1, -40)
 OpenBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 OpenBtn.Text = "OPEN GUI"
 OpenBtn.TextColor3 = Color3.new(1, 1, 1)
 OpenBtn.Font = Enum.Font.SourceSansBold
-OpenBtn.BorderSizePixel = 1
-OpenBtn.Visible = false -- 처음엔 숨김
+OpenBtn.Visible = false
 
--- [닫기 버튼 (X)]
 local CloseBtn = Instance.new("TextButton", MainFrame)
 CloseBtn.Size = UDim2.new(0, 30, 0, 30)
 CloseBtn.Position = UDim2.new(1, -35, 0, 5)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
 CloseBtn.Text = "X"
 CloseBtn.TextColor3 = Color3.new(1, 1, 1)
-CloseBtn.Font = Enum.Font.SourceSansBold
-CloseBtn.TextSize = 18
 
--- 열기/닫기 로직
-CloseBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = false
-    OpenBtn.Visible = true
-end)
+CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false OpenBtn.Visible = true end)
+OpenBtn.MouseButton1Click:Connect(function() MainFrame.Visible = true OpenBtn.Visible = false end)
 
-OpenBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = true
-    OpenBtn.Visible = false
-end)
-
--- 사이드바 및 나머지 구성 요소들 (기존과 동일)
 local SideBar = Instance.new("Frame", MainFrame)
 SideBar.Size = UDim2.new(0, 150, 1, 0)
 SideBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -91,11 +77,7 @@ local function createPage(name)
     return p
 end
 
-createPage("ESP")
-createPage("Wallhole")
-createPage("TP")
-createPage("AutoFarm")
-createPage("RankFarm")
+createPage("ESP"); createPage("Wallhole"); createPage("TP"); createPage("AutoFarm"); createPage("RankFarm")
 Pages.ESP.Visible = true
 
 local function createMenuBtn(name, displayName, pos)
@@ -138,14 +120,15 @@ local function createToggle(parent, title, callback)
 end
 
 -------------------------------------------------------
--- [기능 변수 및 로직 - 기존과 동일]
+-- [기능 로직]
 -------------------------------------------------------
 local espOn, wallOn, tpOn, coinOn, rankOn = false, false, false, false, false
-local platform = nil
 
+-- 무기 소지 확인 함수
 local function checkWeapon(plr, names)
+    if not plr or not plr.Character then return false end
     for _, n in pairs(names) do
-        if plr.Character and plr.Character:FindFirstChild(n) then return true end
+        if plr.Character:FindFirstChild(n) then return true end
         if plr.Backpack:FindFirstChild(n) then return true end
     end
     return false
@@ -154,77 +137,116 @@ end
 createToggle(Pages.ESP, "ESP", function(v) espOn = v end)
 createToggle(Pages.Wallhole, "Wallhole", function(v) wallOn = v end)
 createToggle(Pages.TP, "Gun TP", function(v) tpOn = v end)
-createToggle(Pages.AutoFarm, "Coin Farm", function(v) coinOn = v if not v and platform then platform:Destroy() platform = nil end end)
-createToggle(Pages.RankFarm, "Rank Farm", function(v) rankOn = v if not v and platform then platform:Destroy() platform = nil end end)
+createToggle(Pages.AutoFarm, "Coin Farm", function(v) coinOn = v end)
+createToggle(Pages.RankFarm, "Rank Farm", function(v) rankOn = v end)
+
+-- 공용 안전 플랫폼 (한 번만 생성)
+local safePlatform = Instance.new("Part")
+safePlatform.Name = "ECA_UniversalPlatform"
+safePlatform.Size = Vector3.new(50, 1, 50)
+safePlatform.Anchored = true
+safePlatform.CanCollide = true
+safePlatform.Position = Vector3.new(0, -500, 0) 
+safePlatform.Parent = workspace
 
 task.spawn(function()
     while true do
-        task.wait(0.01)
+        task.wait(0.1)
+        
+        -- 캐릭터 확인
+        local char = lp.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if not root then continue end
+
+        -- 기능 꺼져있으면 플랫폼 숨기기
+        if not (rankOn or coinOn) then
+            safePlatform.Position = Vector3.new(0, -500, 0)
+            continue
+        end
+
         if rankOn then
-            local isM = checkWeapon(lp, {"Knife"})
-            if isM then
-                if platform then platform:Destroy() platform = nil end
-                local k = lp.Character:FindFirstChild("Knife") or lp.Backpack:FindFirstChild("Knife")
-                if k then k.Parent = lp.Character end
+            local isMurderer = checkWeapon(lp, {"Knife"})
+            
+            if isMurderer then
+                -- 살인마인 경우 타겟 추적
+                local target = nil
                 for _, v in pairs(Players:GetPlayers()) do
                     if v ~= lp and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 then
-                        lp.Character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,2)
-                        task.wait(0.05) if k then k:Activate() end task.wait(0.1)
+                        target = v
+                        break
                     end
                 end
-            else
-                if not platform then
-                    lp.Character.HumanoidRootPart.CFrame = CFrame.new(0, 800, 0)
-                    platform = Instance.new("Part", workspace)
-                    platform.Size, platform.Position, platform.Anchored = Vector3.new(30,1,30), Vector3.new(0, 795, 0), true
+
+                if target and target.Character:FindFirstChild("HumanoidRootPart") then
+                    safePlatform.Position = Vector3.new(0, -500, 0) -- 추적 시 플랫폼 치우기
+                    local k = char:FindFirstChild("Knife") or lp.Backpack:FindFirstChild("Knife")
+                    if k then 
+                        k.Parent = char
+                        root.CFrame = target.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+                        task.wait(0.05)
+                        k:Activate()
+                    end
+                else
+                    -- 타겟 없으면 공허 대기
+                    safePlatform.Position = Vector3.new(0, 800, 0)
+                    root.CFrame = CFrame.new(0, 805, 0)
                 end
+            else
+                -- 시민/보안관이면 공허 대기
+                safePlatform.Position = Vector3.new(0, 800, 0)
+                root.CFrame = CFrame.new(0, 805, 0)
             end
+
         elseif coinOn then
-            local coins = {}
-            for _, v in pairs(workspace:GetDescendants()) do if v.Name == "Coin" then table.insert(coins, v) end end
-            if #coins > 0 then
-                if platform then platform:Destroy() platform = nil end
-                for _, c in pairs(coins) do
-                    if not coinOn or rankOn then break end
-                    lp.Character.HumanoidRootPart.CFrame = c.CFrame
-                    task.wait(0.15)
-                end
+            -- 코인 팜 로직
+            local coin = nil
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v.Name == "Coin" or v.Name == "GoldCoin" then coin = v break end
+            end
+
+            if coin and coin:IsA("BasePart") then
+                safePlatform.Position = Vector3.new(0, -500, 0)
+                root.CFrame = coin.CFrame
             else
-                if not platform then
-                    lp.Character.HumanoidRootPart.CFrame = CFrame.new(0, 700, 0)
-                    platform = Instance.new("Part", workspace)
-                    platform.Size, platform.Position, platform.Anchored = Vector3.new(30,1,30), Vector3.new(0, 695, 0), true
-                end
+                -- 코인 없으면 공허 대기
+                safePlatform.Position = Vector3.new(0, 700, 0)
+                root.CFrame = CFrame.new(0, 705, 0)
             end
         end
     end
 end)
 
+-- ESP 로직
 RunService.RenderStepped:Connect(function()
-    if not espOn then 
-        for _, v in pairs(Players:GetPlayers()) do
-            if v.Character and v.Character:FindFirstChild("ECA_H") then v.Character.ECA_H.Enabled = false end
-        end
-        return 
-    end
     for _, v in pairs(Players:GetPlayers()) do
         if v ~= lp and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-            local h = v.Character:FindFirstChild("ECA_H") or Instance.new("Highlight", v.Character)
-            h.Name = "ECA_H"
+            local h = v.Character:FindFirstChild("ECA_H")
+            if not espOn then
+                if h then h.Enabled = false end
+                continue
+            end
+            
+            if not h then
+                h = Instance.new("Highlight", v.Character)
+                h.Name = "ECA_H"
+            end
+            
+            h.Enabled = true
             if checkWeapon(v, {"Knife"}) then h.FillColor = Color3.new(1,0,0)
             elseif checkWeapon(v, {"Gun", "Revolver"}) then h.FillColor = Color3.new(0,0,1)
             else h.FillColor = Color3.new(0,1,0) end
-            h.Enabled = true
         end
     end
 end)
 
+-- 총기/투사체 감지
 workspace.DescendantAdded:Connect(function(obj)
     if wallOn and (obj.Name:find("Bullet") or obj.Name == "KnifeProjectile") then obj.CanCollide = false end
     if tpOn and (obj.Name == "GunDrop" or (obj.Name == "Handle" and obj.Parent.Name == "Gun")) then
-        task.wait(0.05)
-        if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
-            lp.Character.HumanoidRootPart.CFrame = obj:IsA("BasePart") and obj.CFrame or obj:GetModelCFrame()
+        task.wait(0.1)
+        local root = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            root.CFrame = obj:IsA("BasePart") and obj.CFrame or obj:GetModelCFrame()
         end
     end
 end)
